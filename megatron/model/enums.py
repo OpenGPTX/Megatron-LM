@@ -24,5 +24,10 @@ class PositionEmbeddingType(enum.Enum):
     alibi = 2
     nope = 4
 
+class UL2ModelType(enum.Enum):
+    encoder_decoder = 'ED'
+    non_causal_decoder = 'ND'
+    causal_decoder = 'CD'
+
 # For backward compatibility with old model checkpoints
 from megatron.core.enums import ModelType
