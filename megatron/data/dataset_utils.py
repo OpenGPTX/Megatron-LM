@@ -603,7 +603,7 @@ def _build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
             indexed_dataset.set_doc_idx(doc_idx_ptr[start_index:end_index])
 
             dataset = build_dataset(
-                name, data_prefix, data_impl,
+                name, data_prefix, data_impl, splits_string,
                 train_valid_test_num_samples[index], max_seq_length,
                 seed, skip_warmup, binary_head, max_seq_length_dec,
                 dataset_type, indexed_dataset)
@@ -623,7 +623,7 @@ def _build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
     return (train_dataset, valid_dataset, test_dataset)
 
 
-def build_dataset(name, data_prefix, data_impl, max_num_samples,
+def build_dataset(name, data_prefix, data_impl, splits_string, max_num_samples,
                   max_seq_length, seed, skip_warmup, binary_head,
                   max_seq_length_dec, dataset_type='standard_bert',
                   indexed_dataset=None):
@@ -672,6 +672,7 @@ def build_dataset(name, data_prefix, data_impl, max_num_samples,
         args = get_args()
         dataset = T5Dataset(
             indexed_dataset=indexed_dataset,
+            splits_string=splits_string,
             masked_lm_prob=args.mask_prob,
             max_seq_length_dec=max_seq_length_dec,
             short_seq_prob=args.short_seq_prob,
@@ -681,6 +682,7 @@ def build_dataset(name, data_prefix, data_impl, max_num_samples,
         args = get_args()
         dataset = BertDataset(
             indexed_dataset=indexed_dataset,
+            splits_string=splits_string,
             masked_lm_prob=args.mask_prob,
             short_seq_prob=args.short_seq_prob,
             binary_head=binary_head,
@@ -756,6 +758,7 @@ def get_train_valid_test_split_(splits_string, size):
 
 def get_samples_mapping(indexed_dataset,
                         data_prefix,
+                        splits_string,
                         num_epochs,
                         max_num_samples,
                         max_seq_length,
@@ -783,6 +786,7 @@ def get_samples_mapping(indexed_dataset,
     indexmap_filename += '_{}msl'.format(max_seq_length)
     indexmap_filename += '_{:0.2f}ssp'.format(short_seq_prob)
     indexmap_filename += '_{}s'.format(seed)
+    indexmap_filename += '_{}ss'.format(splits_string)
     indexmap_filename += '.npy'
 
     # Build the indexed mapping if not exist.
