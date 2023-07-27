@@ -4,7 +4,7 @@
 
 from abc import ABC
 from abc import abstractmethod
-from opengptx_data.src.gptxdata.tokenization import HFTokenizer, SPTokenizer, PretrainedHFTokenizer
+from gptxdata.tokenization import HFTokenizer, SPTokenizer, PretrainedHFTokenizer
 from .bert_tokenization import FullTokenizer as FullBertTokenizer
 from .gpt2_tokenization import GPT2Tokenizer
 
