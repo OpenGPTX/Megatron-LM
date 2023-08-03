@@ -195,7 +195,9 @@ def get_args():
                        choices=['BertWordPieceLowerCase','BertWordPieceCase',
                                 'GPT2BPETokenizer', 'SentencePieceTokenizer',
                                 'GPTSentencePieceTokenizer', 'NullTokenizer',
-                                'ByteTokenizer'],
+                                'ByteTokenizer', 'OpenGPTX-SPTokenizer',
+                                'OpenGPTX-HFTokenizer',
+                                'OpenGPTX-PretrainedHFTokenizer'],
                        help='What type of tokenizer to use.')
     group.add_argument('--tokenizer-model', type=str, default=None,
                        help='YTTM tokenizer model.')
