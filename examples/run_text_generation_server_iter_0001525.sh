@@ -28,7 +28,7 @@ export CMD=" \
        --num-attention-heads 16  \
        --max-position-embeddings 2048  \
        --bf16  \
-       --micro-batch-size 1  \
+       --micro-batch-size 5  \
        --seq-length 2048  \
        --out-seq-length 2048  \
        --temperature 0.8  \
