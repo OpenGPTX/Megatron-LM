@@ -620,3 +620,70 @@ class _GPTXSentencePieceTokenizer(AbstractTokenizer):
     @property
     def mask(self):
         return self._mask_id
+
+
+class _HFTokenizer(AbstractTokenizer):
+    def __init__(self, model_file):
+        name = 'OpenGPTX-HFTokenizer'
+        super().__init__(name)
+        self.tokenizer = HFTokenizer.instantiate_from_file_or_name(model_file_or_name=model_file)
+
+    @property
+    def vocab_size(self):
+        return len(self.tokenizer)
+
+    @property
+    def vocab(self):
+        return self.tokenizer.vocab
+
+    @property
+    def inv_vocab(self):
+        return self.tokenizer._inv_vocab
+
+    @property
+    def decoder(self):
+        return self.tokenizer._inv_vocab
+
+    @property
+    def encoder(self):
+        return self.tokenizer.vocab
+
+    def tokenize(self, text):
+        return self.tokenizer.encode(text)
+
+    def detokenize(self, ids):
+        return self.tokenizer.decode(ids)
+
+    @property
+    def pad(self):
+        return self.tokenizer.tokenizer.pad_id
+
+    @property
+    def bos_token_id(self):
+        #TODO implement in HFTokenizer
+        return None
+
+    @property
+    def bos(self):
+        #TODO implement in HFTokenizer
+        return None
+
+    @property
+    def eod(self):
+    #TODO implement in HFTokenizer
+        return None
+
+    @property
+    def eos_token_id(self):
+        return self.tokenizer.eod
+
+    @property
+    def eos(self):
+        #TODO implement in HFTokenizer
+        return None
+
+
+    @property
+    def mask(self):
+        #TODO check if needed -> implement in HFTokenizer
+        return None
