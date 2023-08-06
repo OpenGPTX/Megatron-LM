@@ -178,8 +178,9 @@ class MegatronGenerate(Resource):
                 return "beam_width must be an integer > 1"
             if len(prompts) > 1:
                 return "When doing beam_search, batch size must be 1"
-
-        stop_token = 3
+        
+        #TODO: get it from the tokenizer
+        stop_token = 4
         if "stop_token" in request.get_json():
             stop_token = request.get_json()["stop_token"]
             if not isinstance(stop_token, int):
