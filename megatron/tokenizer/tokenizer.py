@@ -592,7 +592,7 @@ class _HFTokenizer(AbstractTokenizer):
 
     @property
     def eod(self):
-        return self.tokenizer.tokenizer.get_vocab()[self.tokenizer.eod_token]
+        return self.tokenizer.eod
     
     # @property
     # def eod_token_id(self):
@@ -645,7 +645,7 @@ class _SPTokenizer(AbstractTokenizer):
 
     @property
     def pad(self):
-        self.tokenizer.tokenizer.PieceToId(self.tokenizer.pad_token)
+        return self.tokenizer.tokenizer.PieceToId(self.tokenizer.pad_token)
 
 
     # @property
@@ -654,7 +654,7 @@ class _SPTokenizer(AbstractTokenizer):
 
     @property
     def bos(self):
-        self.tokenizer.tokenizer.PieceToId(self.tokenizer.bos_token)
+        return self.tokenizer.tokenizer.PieceToId(self.tokenizer.bos_token)
 
     # @property
     # def bos_token_id(self):
@@ -662,7 +662,7 @@ class _SPTokenizer(AbstractTokenizer):
 
     @property
     def eod(self):
-        self.tokenizer.tokenizer.PieceToId(self.tokenizer.eod_token)
+        return self.tokenizer.eod
     
     # @property
     # def eod_token_id(self):
@@ -670,7 +670,7 @@ class _SPTokenizer(AbstractTokenizer):
 
     @property
     def eos(self):
-        self.tokenizer.tokenizer.PieceToId(self.tokenizer.eos_token)
+        return self.tokenizer.tokenizer.PieceToId(self.tokenizer.eos_token)
     
     # @property
     # def eos_token_id(self):
