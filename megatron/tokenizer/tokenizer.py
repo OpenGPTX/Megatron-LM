@@ -791,6 +791,14 @@ class _OpenGPTXTokenizer(AbstractTokenizer):
     def inv_vocab(self):
         return self.tokenizer.inv_vocab
 
+    @property
+    def decoder(self):
+        return self.inv_vocab
+
+    @property
+    def encoder(self):
+        return self.tokenizer.vocab
+
     def tokenize(self, text):
         return self.tokenizer.encode(text)
 
