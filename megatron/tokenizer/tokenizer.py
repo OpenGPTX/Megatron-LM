@@ -576,7 +576,7 @@ class _HFTokenizer(AbstractTokenizer):
 
     @property
     def pad(self):
-        return self.tokenizer.get_vocab()[self.pad_token]
+        return self.tokenizer.tokenizer.get_vocab()[self.pad_token]
 
     @property
     def pad_token_id(self):
@@ -584,7 +584,7 @@ class _HFTokenizer(AbstractTokenizer):
 
     @property
     def bos(self):
-        return self.tokenizer.get_vocab()[self.bos_token]
+        return self.tokenizer.tokenizer.get_vocab()[self.bos_token]
 
     @property
     def bos_token_id(self):
@@ -592,7 +592,7 @@ class _HFTokenizer(AbstractTokenizer):
 
     @property
     def eod(self):
-        return self.tokenizer.get_vocab()[self.eod_token]
+        return self.tokenizer.tokenizer.get_vocab()[self.eod_token]
     
     @property
     def eod_token_id(self):
@@ -600,7 +600,7 @@ class _HFTokenizer(AbstractTokenizer):
 
     @property
     def eos(self):
-        return self.tokenizer.get_vocab()[self.eos_token]
+        return self.tokenizer.tokenizer.get_vocab()[self.eos_token]
     
     @property
     def eos_token_id(self):
@@ -645,7 +645,7 @@ class _SPTokenizer(AbstractTokenizer):
 
     @property
     def pad(self):
-        self.tokenizer.PieceToId(self.pad_token)
+        self.tokenizer.tokenizer.PieceToId(self.pad_token)
 
 
     @property
@@ -654,7 +654,7 @@ class _SPTokenizer(AbstractTokenizer):
 
     @property
     def bos(self):
-        self.tokenizer.PieceToId(self.bos_token)
+        self.tokenizer.tokenizer.PieceToId(self.bos_token)
 
     @property
     def bos_token_id(self):
@@ -662,7 +662,7 @@ class _SPTokenizer(AbstractTokenizer):
 
     @property
     def eod(self):
-        self.tokenizer.PieceToId(self.eod_token)
+        self.tokenizer.tokenizer.PieceToId(self.eod_token)
     
     @property
     def eod_token_id(self):
@@ -670,7 +670,7 @@ class _SPTokenizer(AbstractTokenizer):
 
     @property
     def eos(self):
-        self.tokenizer.PieceToId(self.eos_token)
+        self.tokenizer.tokenizer.PieceToId(self.eos_token)
     
     @property
     def eos_token_id(self):
