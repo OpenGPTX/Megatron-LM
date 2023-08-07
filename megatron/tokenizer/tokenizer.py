@@ -576,35 +576,35 @@ class _HFTokenizer(AbstractTokenizer):
 
     @property
     def pad(self):
-        return self.tokenizer.tokenizer.get_vocab()[self.pad_token]
+        return self.tokenizer.tokenizer.get_vocab()[self.tokenizer.pad_token]
 
-    @property
-    def pad_token_id(self):
-        return self.pad_token_id
+    # @property
+    # def pad_token_id(self):
+    #     return self.pad_token_id
 
     @property
     def bos(self):
-        return self.tokenizer.tokenizer.get_vocab()[self.bos_token]
+        return self.tokenizer.tokenizer.get_vocab()[self.tokenizer.bos_token]
 
-    @property
-    def bos_token_id(self):
-        return self.bos_token_id
+    # @property
+    # def bos_token_id(self):
+    #     return self.bos_token_id
 
     @property
     def eod(self):
-        return self.tokenizer.tokenizer.get_vocab()[self.eod_token]
+        return self.tokenizer.tokenizer.get_vocab()[self.tokenizer.eod_token]
     
-    @property
-    def eod_token_id(self):
-        return self.eod_token_id
+    # @property
+    # def eod_token_id(self):
+    #     return self.eod_token_id
 
     @property
     def eos(self):
-        return self.tokenizer.tokenizer.get_vocab()[self.eos_token]
+        return self.tokenizer.tokenizer.get_vocab()[self.tokenizer.eos_token]
     
-    @property
-    def eos_token_id(self):
-        return self.eos_token_id
+    # @property
+    # def eos_token_id(self):
+    #     return self.eos_token_id
 
     @property
     def mask(self):
@@ -645,36 +645,36 @@ class _SPTokenizer(AbstractTokenizer):
 
     @property
     def pad(self):
-        self.tokenizer.tokenizer.PieceToId(self.pad_token)
+        self.tokenizer.tokenizer.PieceToId(self.tokenizer.pad_token)
 
 
-    @property
-    def pad_token_id(self):
-        return self.pad_token_id
+    # @property
+    # def pad_token_id(self):
+    #     return self.tokenizer.pad_token_id
 
     @property
     def bos(self):
-        self.tokenizer.tokenizer.PieceToId(self.bos_token)
+        self.tokenizer.tokenizer.PieceToId(self.tokenizer.bos_token)
 
-    @property
-    def bos_token_id(self):
-        return self.bos_token_id
+    # @property
+    # def bos_token_id(self):
+    #     return self.bos_token_id
 
     @property
     def eod(self):
-        self.tokenizer.tokenizer.PieceToId(self.eod_token)
+        self.tokenizer.tokenizer.PieceToId(self.tokenizer.eod_token)
     
-    @property
-    def eod_token_id(self):
-        return self.eod_token_id
+    # @property
+    # def eod_token_id(self):
+    #     return self.eod_token_id
 
     @property
     def eos(self):
-        self.tokenizer.tokenizer.PieceToId(self.eos_token)
+        self.tokenizer.tokenizer.PieceToId(self.tokenizer.eos_token)
     
-    @property
-    def eos_token_id(self):
-        return self.eos_token_id
+    # @property
+    # def eos_token_id(self):
+    #     return self.eos_token_id
 
     @property
     def mask(self):
