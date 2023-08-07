@@ -558,11 +558,11 @@ class _HFTokenizer(AbstractTokenizer):
 
     @property
     def inv_vocab(self):
-        return self.tokenizer._inv_vocab
+        return self.tokenizer.inv_vocab
 
     @property
     def decoder(self):
-        return self.tokenizer._inv_vocab
+        return self.inv_vocab
 
     @property
     def encoder(self):
@@ -627,11 +627,11 @@ class _SPTokenizer(AbstractTokenizer):
 
     @property
     def inv_vocab(self):
-        return self.tokenizer._inv_vocab
+        return self.tokenizer.inv_vocab
 
     @property
     def decoder(self):
-        return self.tokenizer._inv_vocab
+        return self.inv_vocab
 
     @property
     def encoder(self):
