@@ -39,7 +39,7 @@ def build_tokenizer(args):
         assert args.vocab_size is not None
         tokenizer = _NullTokenizer(args.vocab_size)
     elif args.tokenizer_type == "OpenGPTX-HFTokenizer":
-        tokenizer = _HFTokenizer(model_file=args.tokenizer_modell)
+        tokenizer = _HFTokenizer(model_file=args.tokenizer_model)
     elif args.tokenizer_type == "OpenGPTX-PretrainedHFTokenizer":
         # TODO implement AbstractTokenizer Wrapper
         tokenizer = PretrainedHFTokenizer.instantiate_from_file_or_name(model_file_or_name=args.tokenizer_model)
