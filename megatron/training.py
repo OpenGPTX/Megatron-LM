@@ -672,7 +672,7 @@ def training_log(loss_dict, total_loss_dict, learning_rate, iteration,
         # https://github.com/bigscience-workshop/Megatron-DeepSpeed/pull/283#issue-1260805063
         # for more details.
 
-        coefficient = 24
+        coefficient = 32 if args.t5_swiglu else 24
 
         flops_per_iteration = (
             coefficient * checkpoint_activations_factor * batch_size
