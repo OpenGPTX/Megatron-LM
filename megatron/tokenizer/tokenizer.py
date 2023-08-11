@@ -41,8 +41,7 @@ def build_tokenizer(args):
     elif args.tokenizer_type == "OpenGPTX-HFTokenizer":
         tokenizer = _HFTokenizer(model_file=args.tokenizer_model)
     elif args.tokenizer_type == "OpenGPTX-PretrainedHFTokenizer":
-        # TODO implement AbstractTokenizer Wrapper
-        tokenizer = PretrainedHFTokenizer.instantiate_from_file_or_name(model_file_or_name=args.tokenizer_model)
+        tokenizer = _PretrainedHFTokenizer(model_file_or_name=args.tokenizer_model)
     elif args.tokenizer_type == "OpenGPTX-SPTokenizer":
         tokenizer = _SPTokenizer(model_file=args.tokenizer_model)
     else:
@@ -683,3 +682,76 @@ class _SPTokenizer(AbstractTokenizer):
     @property
     def mask(self):
         raise NotImplementedError
+
+
+class _HFTokenizer(AbstractTokenizer):
+    def __init__(self, model_file):
+        name = 'OpenGPTX-PretrainedHFTokenizer'
+        super().__init__(name)
+        self.tokenizer = PretrainedHFTokenizer.instantiate_from_file_or_name(model_file_or_name=model_file)
+
+    @property
+    def vocab_size(self):
+        return self.tokenizer.vocab_size
+
+    @property
+    def vocab(self):
+        return self.tokenizer.vocab
+
+    @property
+    def inv_vocab(self):
+        return self.tokenizer.inv_vocab
+
+    @property
+    def decoder(self):
+        return self.inv_vocab
+
+    @property
+    def encoder(self):
+        return self.tokenizer.vocab
+
+    def tokenize(self, text):
+        return self.tokenizer.encode(text)
+
+    def detokenize(self, ids):
+        return self.tokenizer.decode(ids)
+
+    @property
+    def pad(self):
+        return self.tokenizer.tokenizer.get_vocab()[self.tokenizer.pad_token]
+
+    @property
+    def pad_token_id(self):
+        return self.pad
+
+    @property
+    def bos(self):
+        return self.tokenizer.tokenizer.get_vocab()[self.tokenizer.bos_token]
+
+    @property
+    def bos_token_id(self):
+        return self.bos
+
+    @property
+    def eod(self):
+        return self.tokenizer.eod
+    
+    @property
+    def eod_token_id(self):
+        return self.eod
+
+    @property
+    def eos(self):
+        #TODO: make sure this makes sense
+        #return self.tokenizer.tokenizer.get_vocab()[self.tokenizer.eos_token]
+        return self.eod
+    @property
+    def eos_token_id(self):
+        #TODO: make sure this makes sense
+        return self.eos
+
+    @property
+    def mask(self):
+        raise NotImplementedError
+
+
