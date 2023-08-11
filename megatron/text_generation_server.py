@@ -312,6 +312,34 @@ class MegatronDetokenizer(Resource):
         return jsonify({})
 
 
+class MegatronMetadata(Resource):
+    def __init__(self, tokenizer):
+        self.tokenizer = tokenizer
+
+    def put(self):
+        args = get_args()
+
+        try:
+            if hasattr(args, 'eos_id'):
+                eod_id = args.eos_id
+            else:
+                try:
+                    eod_id = self.tokenizer.eod
+                except NotImplementedError:
+                    eod_id = self.tokenizer.eos_token_id
+            max_length = args.max_position_embeddings
+            if max_length is None:
+                max_length = args.seq_length
+
+            return jsonify({
+                "vocab_size": self.tokenizer.vocab_size,
+                "eod_token_id": eod_id,
+                "max_length": max_length,
+            })
+        except ValueError as ve:
+            return ve.args[0]
+
+
 class MegatronServer(object):
     def __init__(self, model):
         self.app = Flask(__name__, static_url_path="")
@@ -322,6 +350,9 @@ class MegatronServer(object):
         )
         api.add_resource(
             MegatronDetokenizer, "/detokenize", resource_class_args=[get_tokenizer()]
+        )
+        api.add_resource(
+            MegatronMetadata, "/metadata", resource_class_args=[get_tokenizer()]
         )
 
     def run(self, url):
