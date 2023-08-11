@@ -684,7 +684,7 @@ class _SPTokenizer(AbstractTokenizer):
         raise NotImplementedError
 
 
-class _HFTokenizer(AbstractTokenizer):
+class _PretrainedHFTokenizer(AbstractTokenizer):
     def __init__(self, model_file):
         name = 'OpenGPTX-PretrainedHFTokenizer'
         super().__init__(name)
