@@ -41,7 +41,7 @@ def build_tokenizer(args):
     elif args.tokenizer_type == "OpenGPTX-HFTokenizer":
         tokenizer = _HFTokenizer(model_file=args.tokenizer_model)
     elif args.tokenizer_type == "OpenGPTX-PretrainedHFTokenizer":
-        tokenizer = _PretrainedHFTokenizer(model_file_or_name=args.tokenizer_model)
+        tokenizer = _PretrainedHFTokenizer(model_file=args.tokenizer_model)
     elif args.tokenizer_type == "OpenGPTX-SPTokenizer":
         tokenizer = _SPTokenizer(model_file=args.tokenizer_model)
     else:
