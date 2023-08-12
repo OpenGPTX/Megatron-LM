@@ -39,12 +39,11 @@ def build_tokenizer(args):
         assert args.vocab_size is not None
         tokenizer = _NullTokenizer(args.vocab_size)
     elif args.tokenizer_type == "OpenGPTX-HFTokenizer":
-        tokenizer = HFTokenizer.instantiate_from_file_or_name(model_file_or_name=args.tokenizer_model)
+        tokenizer = _HFTokenizer(model_file=args.tokenizer_model)
     elif args.tokenizer_type == "OpenGPTX-PretrainedHFTokenizer":
-        tokenizer = PretrainedHFTokenizer.instantiate_from_file_or_name(model_file_or_name=args.tokenizer_model)
+        tokenizer = _PretrainedHFTokenizer(model_file=args.tokenizer_model)
     elif args.tokenizer_type == "OpenGPTX-SPTokenizer":
-        #tokenizer = SPTokenizer.instantiate_from_file_or_name(model_file_or_name=args.tokenizer_model)
-        tokenizer = _GPTXSentencePieceTokenizer(args.tokenizer_model)
+        tokenizer = _SPTokenizer(model_file=args.tokenizer_model)
     else:
         raise NotImplementedError('{} tokenizer is not '
                                   'implemented.'.format(args.tokenizer_type))
@@ -542,81 +541,217 @@ class _NullTokenizer:
         return None
 
 
-class _GPTXSentencePieceTokenizer(AbstractTokenizer):
+class _HFTokenizer(AbstractTokenizer):
     def __init__(self, model_file):
-        name = 'OpenGPTX-SPTokenizer'
+        name = 'OpenGPTX-HFTokenizer'
         super().__init__(name)
-
-        import sentencepiece
-        self.tokenizer = sentencepiece.SentencePieceProcessor(model_file=model_file)
-        self._initalize()
-
-    def _populate_vocab(self):
-        self._vocab = {}
-        self._inv_vocab = {}
-
-        for i in range(len(self.tokenizer)):
-            t = self.tokenizer.id_to_piece(i)
-            self._inv_vocab[i] = t
-            self._vocab[t] = i
-
-    def _initalize(self):
-        self._populate_vocab()
-        self._eod_id = self._vocab['<eod>']
-
+        self.tokenizer = HFTokenizer.instantiate_from_file_or_name(model_file_or_name=model_file)
 
     @property
     def vocab_size(self):
-        return len(self._vocab)
+        return self.tokenizer.vocab_size
 
     @property
     def vocab(self):
-        return self._vocab
+        return self.tokenizer.vocab
 
     @property
     def inv_vocab(self):
-        return self._inv_vocab
+        return self.tokenizer.inv_vocab
 
     @property
     def decoder(self):
-        return self._inv_vocab
+        return self.inv_vocab
 
     @property
     def encoder(self):
-        return self._vocab
+        return self.tokenizer.vocab
 
     def tokenize(self, text):
-
         return self.tokenizer.encode(text)
 
     def detokenize(self, ids):
-
         return self.tokenizer.decode(ids)
 
     @property
     def pad(self):
-        return self._pad_id
+        return self.tokenizer.tokenizer.get_vocab()[self.tokenizer.pad_token]
 
     @property
-    def bos_token_id(self):
-        return self._bos_id
+    def pad_token_id(self):
+        return self.pad
 
     @property
     def bos(self):
-        return self._bos_id
+        return self.tokenizer.tokenizer.get_vocab()[self.tokenizer.bos_token]
+
+    @property
+    def bos_token_id(self):
+        return self.bos
 
     @property
     def eod(self):
-        return self._eod_id
-
+        return self.tokenizer.eod
+    
     @property
-    def eos_token_id(self):
-        return self._eos_id
+    def eod_token_id(self):
+        return self.eod
 
     @property
     def eos(self):
-        return self._eos_id
+        #TODO: make sure this makes sense
+        #return self.tokenizer.tokenizer.get_vocab()[self.tokenizer.eos_token]
+        return self.eod
+    @property
+    def eos_token_id(self):
+        #TODO: make sure this makes sense
+        return self.eos
 
     @property
     def mask(self):
-        return self._mask_id
+        raise NotImplementedError
+
+
+class _SPTokenizer(AbstractTokenizer):
+    def __init__(self, model_file):
+        name = 'OpenGPTX-SPTokenizer'
+        super().__init__(name)
+        self.tokenizer = SPTokenizer.instantiate_from_file_or_name(model_file_or_name=model_file)
+
+    @property
+    def vocab_size(self):
+        return self.tokenizer.vocab_size
+
+    @property
+    def vocab(self):
+        return self.tokenizer.vocab
+
+    @property
+    def inv_vocab(self):
+        return self.tokenizer.inv_vocab
+
+    @property
+    def decoder(self):
+        return self.inv_vocab
+
+    @property
+    def encoder(self):
+        return self.tokenizer.vocab
+
+    def tokenize(self, text):
+        return self.tokenizer.encode(text)
+
+    def detokenize(self, ids):
+        return self.tokenizer.decode(ids)
+
+    @property
+    def pad(self):
+        return self.tokenizer.tokenizer.PieceToId(self.tokenizer.pad_token)
+
+
+    @property
+    def pad_token_id(self):
+        return self.tokenizer.pad
+
+    @property
+    def bos(self):
+        return self.tokenizer.tokenizer.PieceToId(self.tokenizer.bos_token)
+
+    @property
+    def bos_token_id(self):
+        return self.bos
+
+    @property
+    def eod(self):
+        return self.tokenizer.eod
+    
+    @property
+    def eod_token_id(self):
+        return self.eod
+
+    @property
+    def eos(self):
+        #TODO: make sure this makes sense
+        #return self.tokenizer.tokenizer.get_vocab()[self.tokenizer.eos_token]
+        return self.eod
+    @property
+    def eos_token_id(self):
+        #TODO: make sure this makes sense
+        return self.eos
+
+    @property
+    def mask(self):
+        raise NotImplementedError
+
+
+class _PretrainedHFTokenizer(AbstractTokenizer):
+    def __init__(self, model_file):
+        name = 'OpenGPTX-PretrainedHFTokenizer'
+        super().__init__(name)
+        self.tokenizer = PretrainedHFTokenizer.instantiate_from_file_or_name(model_file_or_name=model_file)
+
+    @property
+    def vocab_size(self):
+        return self.tokenizer.vocab_size
+
+    @property
+    def vocab(self):
+        return self.tokenizer.vocab
+
+    @property
+    def inv_vocab(self):
+        return self.tokenizer.inv_vocab
+
+    @property
+    def decoder(self):
+        return self.inv_vocab
+
+    @property
+    def encoder(self):
+        return self.tokenizer.vocab
+
+    def tokenize(self, text):
+        return self.tokenizer.encode(text)
+
+    def detokenize(self, ids):
+        return self.tokenizer.decode(ids)
+
+    @property
+    def pad(self):
+        return self.tokenizer.tokenizer.get_vocab()[self.tokenizer.pad_token]
+
+    @property
+    def pad_token_id(self):
+        return self.pad
+
+    @property
+    def bos(self):
+        return self.tokenizer.tokenizer.get_vocab()[self.tokenizer.bos_token]
+
+    @property
+    def bos_token_id(self):
+        return self.bos
+
+    @property
+    def eod(self):
+        return self.tokenizer.eod
+    
+    @property
+    def eod_token_id(self):
+        return self.eod
+
+    @property
+    def eos(self):
+        #TODO: make sure this makes sense
+        #return self.tokenizer.tokenizer.get_vocab()[self.tokenizer.eos_token]
+        return self.eod
+    @property
+    def eos_token_id(self):
+        #TODO: make sure this makes sense
+        return self.eos
+
+    @property
+    def mask(self):
+        raise NotImplementedError
+
+
