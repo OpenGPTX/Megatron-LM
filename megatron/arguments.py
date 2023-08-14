@@ -730,11 +730,32 @@ def _add_regularization_args(parser):
     group.add_argument('--adam-beta2', type=float, default=0.999,
                        help='Second coefficient for computing running averages '
                        'of gradient and its square')
-    group.add_argument('--adam-eps', type=float, default=1e-08,
+    group.add_argument('--adam-eps', '--adan-eps', type=float, default=1e-08,
                        help='Term added to the denominator to improve'
                        'numerical stability')
     group.add_argument('--sgd-momentum', type=float, default=0.9,
                        help='Momentum factor for sgd')
+    group.add_argument('--adan-beta1', type=float, default=0.98,
+                       help='First coefficient for computing running averages '
+                       'of gradient, its difference, and Nesterov velocity')
+    group.add_argument('--adan-beta2', type=float, default=0.92,
+                       help='Second coefficient for computing running averages '
+                       'of gradient, its difference, and Nesterov velocity')
+    group.add_argument('--adan-beta3', type=float, default=0.99,
+                       help='Third coefficient for computing running averages '
+                       'of gradient, its difference, and Nesterov velocity')
+    group.add_argument('--adan-no-prox', action='store_true',
+                       help='Whether to use AdamW-like Adan '
+                       '(if `--adan-no-prox` is given) or whether to use the '
+                       'variant used in Adan paper experiments (default).')
+    group.add_argument('--adan-no-foreach', action='store_false',
+                       help='Whether to use PyTorch-internal functions for '
+                       'performance. Faster but consumes more memory.',
+                       dest='adan_foreach')
+    group.add_argument('--adan-no-fused', action='store_false',
+                       help='Whether to use fused Adan for decreased memory '
+                       'requirements and increased throughput.',
+                       dest='adan_fused')
 
     return parser
 
@@ -854,7 +875,7 @@ def _add_training_args(parser):
                        help='Disable bias in the linear layers',
                        dest='add_bias_linear')
     group.add_argument('--optimizer', type=str, default='adam',
-                       choices=['adam', 'sgd'],
+                       choices=['adam', 'sgd', 'adan'],
                        help='Optimizer function')
     group.add_argument('--dataloader-type', type=str, default=None,
                        choices=['single', 'cyclic'],
