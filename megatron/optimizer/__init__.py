@@ -83,6 +83,25 @@ def get_megatron_optimizer(model,
                         lr=args.lr,
                         weight_decay=args.weight_decay,
                         momentum=args.sgd_momentum)
+    elif args.optimizer == 'adan':
+        try:
+            from adan import Adan
+        except ImportError:
+            raise ImportError(
+                'to use the Adan optimizer, please execute '
+                '`python3 -m pip install '
+                'git+https://github.com/sail-sg/Adan.git`'
+            )
+        optimizer = Adan(
+            param_groups,
+            lr=args.lr,
+            weight_decay=args.weight_decay,
+            betas=(args.adan_beta1, args.adan_beta2, args.adan_beta3),
+            eps=args.adam_eps,
+            no_prox=args.adan_no_prox,
+            foreach=args.adan_foreach,
+            fused=args.adan_fused,
+        )
     else:
         raise Exception('{} optimizer is not supported.'.format(
             args.optimizer))
