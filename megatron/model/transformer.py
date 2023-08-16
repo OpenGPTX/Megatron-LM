@@ -387,11 +387,6 @@ class CoreAttention(MegatronModule):
         # [b, np, sq, hn] --> [sq, b, np, hn]
         context_layer = context_layer.permute(2, 0, 1, 3).contiguous()
 
-        # [sq, b, np, hn] --> [sq, b, hp]
-        new_context_layer_shape = context_layer.size()[:-2] + \
-            (self.hidden_size_per_partition,)
-        context_layer = context_layer.view(*new_context_layer_shape)
-
         return context_layer
 
 
@@ -480,7 +475,7 @@ class FlashSelfAttention(torch.nn.Module):
                 softmax_scale=self.softmax_scale, causal=is_causal
             )
 
-        output = rearrange(output, 'b s h d -> s b (h d)').contiguous()
+        output = rearrange(output, 'b s h d -> s b h d').contiguous()
         return output
 
 
@@ -529,7 +524,7 @@ class TritonFlashSelfAttention(torch.nn.Module):
         output = triton_flash_attn(
             q, k, v, self.causal, softmax_scale, attn_mask,
         )
-        output = rearrange(output, 'b h s d -> s b (h d)').contiguous()
+        output = rearrange(output, 'b h s d -> s b h d').contiguous()
         return output
 
 
@@ -652,6 +647,14 @@ class ParallelAttention(MegatronModule):
                 self.core_attention_flash = FlashSelfAttention(
                     causal=True, attention_dropout=config.attention_dropout
                 )
+
+        self.head_scale = (
+            torch.nn.Parameter(torch.ones(
+                (1, 1, self.num_attention_heads_per_partition, 1),
+            ))
+            if config.scale_heads
+            else None
+        )
 
         # Output.
         self.dense = tensor_parallel.RowParallelLinear(
@@ -872,6 +875,13 @@ class ParallelAttention(MegatronModule):
                 context_layer = self.core_attention_flash(
                     query_layer, key_layer, value_layer,
                     attn_mask=attention_mask, alibi=alibi)
+
+        if self.head_scale is not None:
+            context_layer = context_layer * self.head_scale
+
+        # [sq, b, np, hn] --> [sq, b, hp]
+        context_layer = rearrange(
+            context_layer, 's b h d -> s b (h d)').contiguous()
 
         # =================
         # Output. [sq, b, h]

@@ -32,6 +32,7 @@ class TransformerConfig(ModelParallelConfig):
         fp32_residual_connection (bool): If true, move residual connections to fp32.
         apply_residual_connection_post_layernorm (bool): If true, uses the original BERT residule connection ordering.
                                                          Defaults to False.
+        scale_heads (bool): If True, scale each attention head's output by by a learned scalar. Defaults to False.
         normalization (str): Normalization function to use. Defaults to "LayerNorm".
         layernorm_epsilon (float): Layernorm epsilon. Defaults to 1e-5.
 
@@ -134,6 +135,7 @@ class TransformerConfig(ModelParallelConfig):
     fp32_residual_connection: bool = False
     # @jcasper should we keep this option?
     apply_residual_connection_post_layernorm: bool = False
+    scale_heads: bool = False
     normalization: str = "LayerNorm"
     layernorm_epsilon: float = 1e-5
     layernorm_zero_centered_gamma: bool = False
