@@ -37,7 +37,7 @@ def generate_and_post_process(
     move to cpu and convert to list."""
 
     # Main inference.
-    tokens, lengths, output_log_probs, is_max_logprobs = generate(
+    generate_result = generate(
         model,
         prompts=prompts,
         tokens_to_generate=tokens_to_generate,
@@ -53,8 +53,13 @@ def generate_and_post_process(
         stop_on_eol=stop_on_eol,
         prevent_newline_after_colon=prevent_newline_after_colon,
         random_seed=random_seed,
-        return_is_max_logprobs=True,
+        return_is_max_logprobs=return_is_max_logprobs,
     )
+
+    if return_is_max_logprobs:
+        tokens, lengths, output_log_probs, is_max_logprobs = generate_result
+    else:
+        tokens, lengths, output_log_probs = generate_result
 
     # Only post-process on first stage.
     if mpu.is_pipeline_first_stage():
@@ -79,7 +84,7 @@ def generate_and_post_process(
             tokens,
         )
         if return_is_max_logprobs:
-            result = result + (is_max_logprobs,)
+            result = result + (is_max_logprobs.tolist(),)
         return result
 
     return None

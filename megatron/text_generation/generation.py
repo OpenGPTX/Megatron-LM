@@ -88,6 +88,9 @@ def score_and_return_on_first_stage(
         if mpu.is_pipeline_last_stage():
             # Always the last stage should have an output.
             assert logits is not None
+            # DEBUG
+            # print(f'LOGITS: {logits.tolist()}')
+
             log_probs = F.log_softmax(logits, dim=2)
 
             # Pick the tokens that we need to get the log

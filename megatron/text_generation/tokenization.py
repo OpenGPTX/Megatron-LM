@@ -32,7 +32,7 @@ def detokenize_generations(tokens_gpu_tensor,
             for token in sequence_tokens:
                 if args.tokenizer_type in ['SentencePieceTokenizer', 
                         'GPTSentencePieceTokenizer', 'OpenGPTX-SPTokenizer', 'OpenGPTX-HFTokenizer', "OpenGPTX-PretrainedHFTokenizer"]:
-                    word = tokenizer.decoder[token]
+                     word = tokenizer.decoder[token]
                 elif args.tokenizer_type == 'NullTokenizer':
                     word = str(token)
                 else:
