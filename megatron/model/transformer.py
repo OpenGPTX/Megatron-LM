@@ -943,6 +943,8 @@ class ParallelTransformerLayer(MegatronModule):
 
         self.apply_residual_connection_post_layernorm \
             = config.apply_residual_connection_post_layernorm
+        self.post_attn_layernorm_before_residual = \
+            config.post_attn_layernorm_before_residual
 
         self.bf16 = config.bf16
         self.fp32_residual_connection = config.fp32_residual_connection
@@ -1296,16 +1298,26 @@ class ParallelTransformerLayer(MegatronModule):
                 layernorm_input = bias_dropout_add_func(
                     attention_output,
                     attention_bias,
-                    residual,
+                    (
+                        torch.zeros_like(residual)
+                        if self.post_attn_layernorm_before_residual
+                        else residual
+                    ),
                     self.hidden_dropout)
         else:
             out = torch.nn.functional.dropout(attention_output + attention_bias,
                                               p=self.hidden_dropout,
                                               training=self.training)
-            layernorm_input = residual + self.drop_path(out)
+            if self.post_attn_layernorm_before_residual:
+                layernorm_input = self.drop_path(out)
+            else:
+                layernorm_input = residual + self.drop_path(out)
 
         # Layer norm post the self attention.
         layernorm_output = self.post_attention_layernorm(layernorm_input)
+
+        if self.post_attn_layernorm_before_residual:
+            layernorm_output = layernorm_output + residual
 
         # Cross attention.
         if self.layer_type == LayerType.encoder:

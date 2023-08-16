@@ -613,6 +613,10 @@ def _add_network_size_args(parser):
                        action='store_true',
                        help='If set, use original BERT residula connection '
                        'ordering.')
+    group.add_argument('--post-attn-layernorm-before-residual',
+                       action='store_true',
+                       help='Whether to apply the post-attention layernorm '
+                       'before adding the residual.')
     group.add_argument('--scale-heads',
                        action='store_true',
                        help="Whether to scale each attention head's output by "
