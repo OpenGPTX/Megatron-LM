@@ -1,14 +1,17 @@
 # Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
 import datetime
-import torch
-import json
 import threading
-from flask import Flask, request, jsonify
-from flask_restful import Resource, Api
-from megatron import get_args, get_tokenizer
-from megatron.text_generation import generate_and_post_process
-from megatron.text_generation import beam_search_and_post_process
+import traceback
 
+import torch
+from flask import Flask, jsonify, request
+from flask_restful import Api, Resource
+
+from megatron import get_args, get_tokenizer
+from megatron.text_generation import (
+    beam_search_and_post_process,
+    generate_and_post_process,
+)
 
 GENERATE_NUM = 0
 BEAM_NUM = 1
@@ -206,7 +209,7 @@ class MegatronGenerate(Resource):
         with lock:  # Need to get lock to keep multiple threads from hitting code
             if not no_log:
                 print("request IP: " + str(request.remote_addr))
-                print(json.dumps(request.get_json()), flush=True)
+                # print(json.dumps(request.get_json()), flush=True)
                 print("start time: ", datetime.datetime.now())
 
             try:
@@ -239,13 +242,9 @@ class MegatronGenerate(Resource):
                 else:
                     MegatronGenerate.send_do_generate()  # Tell other ranks we're doing generate
 
-                    (
-                        response,
-                        response_seg,
-                        response_logprobs,
-                        response_tokens,
-                        response_is_max_logprobs,
-                    ) = generate_and_post_process(
+                    return_is_max_logprobs = tokens_to_generate == 0
+
+                    generate_result = generate_and_post_process(
                         self.model,
                         prompts=prompts,
                         tokens_to_generate=tokens_to_generate,
@@ -261,19 +260,37 @@ class MegatronGenerate(Resource):
                         stop_on_eol=stop_on_eol,
                         prevent_newline_after_colon=prevent_newline_after_colon,
                         random_seed=random_seed,
-                        return_is_max_logprobs=True,
+                        return_is_max_logprobs=return_is_max_logprobs,
                     )
+
+                    if return_is_max_logprobs:
+                        (
+                            response,
+                            response_seg,
+                            response_logprobs,
+                            response_tokens,
+                            response_is_max_logprobs,
+                        ) = generate_result
+                    else:
+                        (
+                            response,
+                            response_seg,
+                            response_logprobs,
+                            response_tokens,
+                        ) = generate_result
+                        response_is_max_logprobs = None
 
                     result = {
                         "text": response,
                         "segments": response_seg,
                         "logprobs": response_logprobs,
                         "tokens": response_tokens,
-                        "is_max_logprobs": response_is_max_logprobs.tolist(),
+                        "is_max_logprobs": response_is_max_logprobs,
                     }
                 return jsonify(result)
 
             except ValueError as ve:
+                traceback.print_exc()
                 return ve.args[0]
             print("end time: ", datetime.datetime.now())
 
@@ -346,7 +363,7 @@ class MegatronMetadata(Resource):
                 }
             )
         except ValueError as ve:
-            return ve.args[0]
+            return ve.args[0], 300
 
 
 class MegatronServer(object):

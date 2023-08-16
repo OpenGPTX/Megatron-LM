@@ -25,6 +25,7 @@ export CMD=" \
  --top_p 0.5  \
  --tensor-model-parallel-size 2 \
  --pipeline-model-parallel-size 1 \
+ --max-tokens-to-oom=300000 \
  --num-layers 32 \
  --hidden-size 2560 \
  --num-attention-heads 32 \
