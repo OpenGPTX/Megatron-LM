@@ -613,6 +613,10 @@ def _add_network_size_args(parser):
                        action='store_true',
                        help='If set, use original BERT residula connection '
                        'ordering.')
+    group.add_argument('--scale-heads',
+                       action='store_true',
+                       help="Whether to scale each attention head's output by "
+                       'a learned scalar.')
     group.add_argument('--openai-gelu', action='store_true',
                        help='Use OpenAIs GeLU implementation. This option'
                        'should not be used unless for backward compatibility'
