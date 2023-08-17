@@ -15,4 +15,4 @@ CUDA_MINOR_VERSION_MISMATCH_OK=1 python -m pip install \
 . 2>&1 \
 | tee build.log
 
-cd Megatron-LM
+cd ../Megatron-LM
