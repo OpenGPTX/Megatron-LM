@@ -11,6 +11,7 @@ from megatron.core.enums import ModelType
 from megatron.core.models.common.rotary_pos_embedding import RotaryEmbedding
 
 from .enums import AttnMaskType, LayerType, PositionEmbeddingType
+from .gbst import GBSTLayer
 from .module import MegatronModule
 from .transformer import ParallelTransformer
 from .utils import get_linear_layer
@@ -161,6 +162,16 @@ class Embedding(MegatronModule):
             vocab_size, self.hidden_size, config=config, init_method=config.init_method)
         self._word_embeddings_key = 'word_embeddings'
 
+        self.use_gbst = config.use_gbst
+        if self.use_gbst:
+            self.gbst = GBSTLayer(
+                self.hidden_size,
+                downsample_rate=config.gbst_downsample_rate,
+                max_subword_block_width=config.gbst_max_subword_block_width,
+                block_attention=config.gbst_block_attention,
+                conv_kernel_size=config.gbst_conv_kernel_size,
+            )
+
         # Position embedding (serial).
         self.add_position_embedding = \
             args.position_embedding_type is PositionEmbeddingType.learned_absolute
@@ -227,6 +238,14 @@ class Embedding(MegatronModule):
         if self.embedding_weights_in_fp32:
             words_embeddings = words_embeddings.to(self.params_dtype)
             self.word_embeddings = self.word_embeddings.to(self.params_dtype)
+
+        if self.use_gbst:
+            # [b s h] --> [b h s]
+            words_embeddings = words_embeddings.transpose(-2, -1)
+            words_embeddings = self.gbst(words_embeddings)
+            # [b h s] --> [b s h], where s is smaller than before
+            words_embeddings = words_embeddings.transpose(-2, -1).contiguous()
+
         if self.add_position_embedding:
             position_embeddings = self.position_embeddings(position_ids)
             embeddings = words_embeddings + position_embeddings

@@ -32,6 +32,7 @@ def parse_args(extra_args_provider=None, ignore_unknown_args=False):
     parser = _add_distributed_args(parser)
     parser = _add_validation_args(parser)
     parser = _add_data_args(parser)
+    parser = _add_gbst_args(parser)
     parser = _add_autoresume_args(parser)
     parser = _add_biencoder_args(parser)
     parser = _add_vision_args(parser)
@@ -1241,6 +1242,24 @@ def _add_data_args(parser):
                        'end-of-document token.')
     group.add_argument('--eod-mask-loss', action='store_true',
                        help='Mask loss for the end of document tokens.')
+
+    return parser
+
+
+def _add_gbst_args(parser):
+    group = parser.add_argument_group(title="GBST")
+
+    group.add_argument('--use-gbst', action='store_true',
+                       help='Whether to use gradient-based subword '
+                       'tokenization.')
+    group.add_argument('--gbst-downsample-rate', type=int, default=2,
+                       help='How much to downsample by.')
+    group.add_argument('--gbst-max-subword-block-width', type=int, default=4,
+                       help='Maximum block size to use for enumeration.')
+    group.add_argument('--gbst-block-attention', action='store_true',
+                       help='Whether to use block score calibration.')
+    group.add_argument('--gbst-conv-kernel-size', type=int, default=5,
+                       help='Size of the pre-GBST convolution kernel.')
 
     return parser
 
