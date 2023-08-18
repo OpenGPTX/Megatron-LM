@@ -9,3 +9,5 @@ import torch
 from torch.nn.parallel.distributed import DistributedDataParallel as torchDDP
 
 from megatron import get_args
+
+print("Imports work.")
