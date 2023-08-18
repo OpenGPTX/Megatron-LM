@@ -35,6 +35,9 @@ def detokenize_generations(tokens_gpu_tensor,
                     word = tokenizer.decoder[token]
                 elif args.tokenizer_type == 'NullTokenizer':
                     word = str(token)
+                elif args.tokenizer_type == 'ByteTokenizer':
+                    raise TypeError(
+                        'cannot return segments with ByteTokenizer')
                 else:
                     word = tokenizer.tokenizer.decoder[token]
                     word = bytearray(

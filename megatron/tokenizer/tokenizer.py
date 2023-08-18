@@ -94,6 +94,8 @@ def build_tokenizer(args):
         _assert_gptx_tokenizer_available(args.tokenizer_type, SPTokenizer)
         tokenizer = SPTokenizer.instantiate_from_file_or_name(model_file_or_name=args.tokenizer_model)
         tokenizer.add_special_tokens(ul2_denoiser_tokens)
+    elif args.tokenizer_type == 'ByteTokenizer':
+        tokenizer = _ByteTokenizer(vocab_extra_ids=args.vocab_extra_ids)
     else:
         raise NotImplementedError('{} tokenizer is not '
                                   'implemented.'.format(args.tokenizer_type))
@@ -707,3 +709,118 @@ class _NullTokenizer:
     @property
     def additional_special_tokens_ids(self):
         return None
+
+
+class _ByteTokenizer:
+    NUM_BYTE_VALUES = 256
+
+    def __init__(
+            self,
+            vocab_extra_ids=0,
+    ):
+        vocab_size = _ByteTokenizer.NUM_BYTE_VALUES
+
+        self._extra_id_tokens = [
+            f'<extra_id_{i}>' for i in range(vocab_extra_ids)]
+
+        special_tokens = ['<EOD>']
+        special_tokens.extend(self._extra_id_tokens)
+
+        self.special_tokens = {
+            tok: i + _ByteTokenizer.NUM_BYTE_VALUES
+            for (i, tok) in enumerate(special_tokens)
+        }
+
+        self.sep_id = None
+        self.mask_id = None
+        self.pad_id = None
+        self._bos_token_id = None
+        self._eos_token_id = None
+        self.eod_id = self.special_tokens['<EOD>']
+
+        self.vocab_size = vocab_size + len(self.special_tokens)
+        self.vocab = {chr(i): i for i in range(_ByteTokenizer.NUM_BYTE_VALUES)}
+        self.vocab.update(self.special_tokens)
+        assert len(self.vocab) == self.vocab_size, (
+            "unexpected vocabulary size; make sure none of the specified "
+            "special tokens collide with the original 256 ASCII symbols"
+        )
+        self.inv_vocab = {v: k for (k, v) in self.vocab.items()}
+
+    def tokenize(self, text):
+        # This always byte-tokenizes even sequences that would result in
+        # special tokens. This means it's impossible to obtain special
+        # tokens from tokenization.
+        return list(text.encode(errors='replace'))
+
+    def detokenize(self, ids):
+        # This is a bit awkward, but we try to prevent UTF-8 shenanigans.
+        curr_bytestr = []
+        text_parts = []
+        for val in ids:
+            if val >= _ByteTokenizer.NUM_BYTE_VALUES:
+                if curr_bytestr:
+                    text_part = bytes(curr_bytestr).decode(errors='replace')
+                    text_parts.append(text_part)
+                    curr_bytestr.clear()
+                text_parts.append(self.inv_vocab[val])
+            else:
+                curr_bytestr.append(val)
+        text_parts.append(bytes(curr_bytestr).decode(errors='replace'))
+        return ''.join(text_parts)
+
+    @property
+    def cls(self):
+        if self.cls_id is None:
+            raise AttributeError(
+                'Byte tokenizer does not have a CLS token by default; '
+                'please add it to the `special_tokens`')
+        return self.cls_id
+
+    @property
+    def sep(self):
+        if self.sep_id is None:
+            raise AttributeError(
+                'Byte tokenizer does not have a SEP token by default; '
+                'please add it to the `special_tokens`')
+        return self.sep_id
+
+    @property
+    def pad(self):
+        if self.pad_id is None:
+            raise AttributeError(
+                'Byte tokenizer does not have a PAD token by default; '
+                'please add it to the `special_tokens`')
+        return self.pad_id
+
+    @property
+    def eod(self):
+        return self.eod_id
+
+    @property
+    def mask(self):
+        if self.mask_id is None:
+            raise AttributeError(
+                'Byte tokenizer does not have a MASK token by default; '
+                'please add it to the `special_tokens`')
+        return self.mask_id
+
+    @property
+    def bos_token_id(self):
+        if self._bos_token_id is None:
+            raise AttributeError(
+                'Byte tokenizer does not have a BOS token by default; '
+                'please add it to the `special_tokens`')
+        return self._bos_token_id
+
+    @property
+    def eos_token_id(self):
+        if self._eos_token_id is None:
+            raise AttributeError(
+                'Byte tokenizer does not have a EOS token by default; '
+                'please add it to the `special_tokens`')
+        return self._eos_token_id
+
+    @property
+    def additional_special_tokens_ids(self):
+        return [self.special_tokens[k] for k in self._extra_id_tokens]
