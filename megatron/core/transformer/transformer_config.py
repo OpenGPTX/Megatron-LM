@@ -47,6 +47,13 @@ class TransformerConfig(ModelParallelConfig):
 
         activation_func (Callable): Activation function to use for the non-linearity in the MLP. Defaults to F.gelu.
 
+        # GBST
+        use_gbst (bool): If True, gradient-based subword tokenization will be used. Defaults to False.
+        gbst_downsample_rate (int): How much to downsample by. Defaults to 2.
+        gbst_max_subword_block_width (int): Maximum block size to use for enumeration. Defaults to 4.
+        gbst_block_attention (bool): If True, use block score calibration. Defaults to False.
+        gbst_conv_kernel_size (int): Size of the pre-GBST convolution kernel. Defaults to 5.
+
         # initialization
         init_method (Callable): Method to initialize weights. Note that bias is always set to
                                 zero. Should be a function that takes a single Tensor and
@@ -141,6 +148,13 @@ class TransformerConfig(ModelParallelConfig):
     gated_linear_unit: bool = False
     t5_gated_linear_unit: bool = False
     activation_func: Callable = F.gelu
+
+    # GBST
+    use_gbst: bool = False
+    gbst_downsample_rate: int = 2
+    gbst_max_subword_block_width: int = 4
+    gbst_block_attention: bool = False
+    gbst_conv_kernel_size: int = 5
 
     # initialization
     init_method: Callable = None
