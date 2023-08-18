@@ -60,8 +60,11 @@ def get_language_model(config, num_tokentypes, add_pooler,
         config.init_method = init_method_normal(config.init_method_std)
 
     if config.output_layer_init_method is None:
-        config.output_layer_init_method = scaled_init_method_normal(config.init_method_std,
-                                                                    config.num_layers)
+        if config.scale_residual_layers:
+            config.output_layer_init_method = scaled_init_method_normal(
+                config.init_method_std, config.num_layers)
+        else:
+            config.output_layer_init_method = config.init_method
 
     # Language model.
     language_model = TransformerLanguageModel(

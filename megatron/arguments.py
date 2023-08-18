@@ -894,6 +894,10 @@ def _add_initialization_args(parser):
                        'distribution used for weight initialization.')
     group.add_argument('--init-method-xavier-uniform', action='store_true',
                        help='Enable Xavier uniform parameter initialization')
+    group.add_argument('--no-scale-residual-layers', action='store_false',
+                       help='Whether to scale residual layers by 1/sqrt(N), '
+                       'where N is the number of residual layers.',
+                       dest='scale_residual_layers')
 
     return parser
 

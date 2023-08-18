@@ -58,7 +58,15 @@ class TransformerConfig(ModelParallelConfig):
                                              both attention and MLP blocks. Defaults to
                                              megatron.core.utils.scaled_init_method_normal(init_method_std)
                                              which is torch.nn.init.normal_ with mean=0.0 and
-                                             std=init_method_std / math.sqrt(2.0 * num_layers).
+                                             std=init_method_std / math.sqrt(2.0 * num_layers)
+                                             if `scale_residual_layers` is True, otherwise defaults
+                                             to `init_method`.
+
+        scale_residual_layers (bool): If True, `output_layer_init_method` defaults to
+                                      `megatron.core.utils.scaled_init_method_normal(init_method_std)`,
+                                      which is `torch.nn.init.normal_` with `mean=0.0` and
+                                      `std=init_method_std / math.sqrt(2.0 * num_layers)`.
+                                      Otherwise it defaults to `init_method`. Defaults to True.
 
         init_method_std (float): Standard deviation of the zero mean normal for the default
                                  initialization method, not used if init_method and
@@ -145,6 +153,7 @@ class TransformerConfig(ModelParallelConfig):
     # initialization
     init_method: Callable = None
     output_layer_init_method: Callable = None
+    scale_residual_layers: bool = True
     init_method_std: float = 0.02
 
     # mixed-precision
@@ -256,6 +265,10 @@ class TransformerConfig(ModelParallelConfig):
             self.init_method = init_method_normal(self.init_method_std)
 
         if self.output_layer_init_method is None:
-            self.output_layer_init_method = scaled_init_method_normal(
-                self.init_method_std, self.num_layers
-            )
+            if self.scale_residual_layers:
+                self.output_layer_init_method = scaled_init_method_normal(
+                    self.init_method_std, self.num_layers
+                )
+            else:
+                self.output_layer_init_method = self.init_method
+
