@@ -2,10 +2,12 @@
 
 """Generation utilities."""
 
+import os
+
 import torch
 import torch.nn.functional as F
 
-from megatron import get_args, get_tokenizer
+from megatron import get_args, get_tokenizer, print_rank_0
 from megatron.core import mpu
 from megatron.utils import get_ltor_masks_and_position_ids
 from .communication import (
@@ -17,6 +19,7 @@ from .forward_step import ForwardStep
 from .sampling import sample
 from .beam_utils import BeamHypotheses
 
+output_done = False
 
 def score_and_return_on_first_stage(
     model, tokens, lengths, return_is_max_logprobs=False
@@ -88,8 +91,16 @@ def score_and_return_on_first_stage(
         if mpu.is_pipeline_last_stage():
             # Always the last stage should have an output.
             assert logits is not None
-            # DEBUG
-            # print(f'LOGITS: {logits.tolist()}')
+
+            global output_done
+            if os.getenv("MEGATRON_OUTPUT_FIRST_LOGITS") and not output_done:
+                print_rank_0("TOKENS:")
+                print_rank_0(tokens.tolist()[0])
+                print_rank_0("-------")
+                print_rank_0("LOGITS:")
+                print_rank_0(logits.tolist()[0])
+                print_rank_0("#######")
+                output_done = True
 
             log_probs = F.log_softmax(logits, dim=2)
 
@@ -236,6 +247,16 @@ def generate_tokens_probs_and_return_on_first_stage(
             logits = forward_step(tokens2use, positions2use, attention_mask2use)
 
             if mpu.is_pipeline_last_stage():
+                global output_done
+                if os.getenv("MEGATRON_OUTPUT_FIRST_LOGITS") and not output_done:
+                    print_rank_0("TOKENS:")
+                    print_rank_0(tokens2use.tolist()[0])
+                    print_rank_0("-------")
+                    print_rank_0("LOGITS:")
+                    print_rank_0(logits.tolist()[0])
+                    print_rank_0("#######")
+                    print_rank_0_done = True
+
                 if prevent_newline_after_colon:
                     logits[
                         tokens2use[:, -1] == tokenizer.tokenize(":")[0],
