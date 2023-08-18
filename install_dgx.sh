@@ -18,4 +18,4 @@ bash install_apex.sh
 
 
 echo 'PYTHONPATH="${PYTHONPATH}:/raid/s3/opengptx/alexw/Megatron-LM/"' > .env
-eval $(cat .env) pytest tests/test_training.py
+eval $(cat .env) python tests/test_installation.py
