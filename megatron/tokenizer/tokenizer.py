@@ -158,7 +158,7 @@ class AbstractTokenizer(ABC):
         pass
 
     @abstractmethod
-    def tokenize(self, text):
+    def tokenize(self, text, is_continuation: bool = False):
         pass
 
     def detokenize(self, token_ids):
@@ -262,7 +262,7 @@ class _BertWordPieceTokenizer(AbstractTokenizer):
     def inv_vocab(self):
         return self.tokenizer.inv_vocab
 
-    def tokenize(self, text):
+    def tokenize(self, text, is_continuation: bool = False):
         text_tokens = self.tokenizer.tokenize(text)
         return self.tokenizer.convert_tokens_to_ids(text_tokens)
 
@@ -400,7 +400,7 @@ class _GPT2BPETokenizer(AbstractTokenizer):
     def inv_vocab(self):
         return self.tokenizer.decoder
 
-    def tokenize(self, text):
+    def tokenize(self, text, is_continuation: bool = False):
         return self.tokenizer.encode(text)
 
     def detokenize(self, token_ids):
@@ -564,7 +564,7 @@ class _SentencePieceTokenizer(AbstractTokenizer):
 
     # From:
     # https://github.com/NVIDIA/NeMo/blob/c8fa217e811d60d11d014827c7f3845ff6c99ae7/nemo/collections/common/tokenizers/sentencepiece_tokenizer.py#L89
-    def tokenize(self, text):
+    def tokenize(self, text, is_continuation: bool = False):
         ids = []
         idx = 0
 
@@ -661,7 +661,7 @@ class _GPTSentencePieceTokenizer(_SentencePieceTokenizer):
         self._bos_id = self.tokenizer.bos_id()
         self._eos_id = self.tokenizer.eos_id()
 
-    def tokenize(self, text):
+    def tokenize(self, text, is_continuation: bool = False):
         return self.tokenizer.encode_as_ids(text)
 
     def detokenize(self, ids):
@@ -693,8 +693,8 @@ class _NullTokenizer:
         self._eos_id = vocab_size
         self.vocab_size = vocab_size+1
 
-    def tokenize(self, text):
-        return [int(x) for x in text.split(' ')]
+    def tokenize(self, text, is_continuation: bool = False):
+        return [int(x) for x in text.split(" ")]
 
     def detokenize(self, ids):
         text = [str(x) for x in ids]
@@ -799,7 +799,7 @@ class _OpenGPTXTokenizer(AbstractTokenizer):
     def encoder(self):
         return self.tokenizer.vocab
 
-    def tokenize(self, text):
+    def tokenize(self, text, is_continuation: bool = False):
         return self.tokenizer.encode(text)
 
     def detokenize(self, ids):
@@ -880,6 +880,9 @@ class _OpenGPTXSPTokenizer(_OpenGPTXTokenizer):
     tokenizer_cls = SPTokenizer
     name = 'OpenGPTX-SP'
 
+    def tokenize(self, text, is_continuation: bool = False):
+        return self.tokenizer.encode(text, is_continuation=is_continuation)
+
 
 class _ByteTokenizer(AbstractTokenizer):
     NUM_BYTE_VALUES = 256
@@ -932,7 +935,7 @@ class _ByteTokenizer(AbstractTokenizer):
     def inv_vocab(self):
         return self._inv_vocab
 
-    def tokenize(self, text):
+    def tokenize(self, text, is_continuation=False):
         # This always byte-tokenizes even sequences that would result in
         # special tokens. This means it's impossible to obtain special
         # tokens from tokenization.

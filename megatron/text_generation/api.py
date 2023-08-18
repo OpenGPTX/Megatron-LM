@@ -6,13 +6,12 @@
 import torch
 
 from megatron.core import mpu
+
 from .communication import broadcast_float_list
-from .generation import (
-    generate_tokens_probs_and_return_on_first_stage,
-    score_and_return_on_first_stage,
-    beam_search_and_return_on_first_stage,
-)
-from .tokenization import tokenize_prompts, detokenize_generations
+from .generation import (beam_search_and_return_on_first_stage,
+                         generate_tokens_probs_and_return_on_first_stage,
+                         score_and_return_on_first_stage)
+from .tokenization import detokenize_generations, tokenize_prompts
 
 
 def generate_and_post_process(

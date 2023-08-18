@@ -300,18 +300,28 @@ class MegatronTokenizer(Resource):
         self.tokenizer = tokenizer
 
     def put(self):
-        if "prompts" not in request.get_json():
+        req_json = request.get_json()
+        if "prompts" not in req_json:
             return "prompts argument required", 400
 
-        prompts = request.get_json()["prompts"]
+        prompts = req_json["prompts"]
         if not isinstance(prompts, list):
             return "prompts is not a list of strings", 400
 
         if len(prompts) == 0:
             return "prompts is empty", 400
 
+        is_continuation = (
+            req_json["is_continuation"] if "is_continuation" in req_json else False
+        )
+
         return jsonify(
-            {"tokens": [self.tokenizer.tokenize(prompt) for prompt in prompts]}
+            {
+                "tokens": [
+                    self.tokenizer.tokenize(prompt, is_continuation=is_continuation)
+                    for prompt in prompts
+                ]
+            }
         )
 
 
