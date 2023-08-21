@@ -24,12 +24,12 @@ Usage:
         "--data-path=/netscratch/mostendorff/experiments/oxw/tokenizer_debug/2_6B_multilingual-bpe_hf_32768_10_rotary/data/costep_europarl_de_text_document",
         "--tokenizer-type=OpenGPTX-HFTokenizer",
         "--tokenizer-model=/netscratch/mostendorff/experiments/oxw/tokenizer_debug/2_6B_multilingual-bpe_hf_32768_10_rotary/bpe_tokenizer.json",
-        // args
-        "--tensor-model-parallel-size=2",
     ],
     "console": "integratedTerminal",
     "justMyCode": false,
 }
+
+### Before run:
 
 # tokenize
 pip install -e /netscratch/mostendorff/experiments/opengptx_data/
@@ -71,9 +71,15 @@ from megatron.model.enums import ModelType
 from megatron.initialize import initialize_megatron
 from megatron.training import setup_model_and_optimizer, build_train_valid_test_data_iterators
 
-# from finetune import model_provider, extra_args, get_batch, loss_func, train_valid_test_datasets_provider
-from pretrain_gpt import model_provider, extra_args_provider, get_batch, loss_func, train_valid_test_datasets_provider
+from megatron.core import mpu
 
+from megatron.training import get_model
+
+# from finetune import model_provider, extra_args, get_batch, loss_func, train_valid_test_datasets_provider
+from pretrain_gpt import extra_args_provider, get_batch, loss_func, train_valid_test_datasets_provider
+
+from megatron.model import GPTModel
+from megatron.arguments import core_transformer_config_from_args
 
 def hf_provider():
     args = get_args()
@@ -81,7 +87,8 @@ def hf_provider():
 
     model = AutoModelForCausalLM.from_pretrained(
         "/netscratch/mostendorff/experiments/oxw/tokenizer_debug/hf_out",  # malteos/2_6B_multilingual-bpe_hf_32768_10_rotary
-        trust_remote_code=True
+        trust_remote_code=True,
+        torch_dtype=torch.bfloat16,
     )
 
     model = model.eval().requires_grad_(False).to(args.huggingface_device)
@@ -89,7 +96,11 @@ def hf_provider():
 
 
 def megatron_forward(model, batch):
+    print(f"megatron_forward => model len = {len(model)}, {torch.distributed.get_rank()=}")
+    # mpu.is_pipeline_first_stage(), torch.distributed.get_rank()
+
     model = model[0]  # TODO: asuming no model parallelism
+    
     tokens, labels, loss_mask, attention_mask, position_ids = batch
     assert torch.all(loss_mask)
     # we need to do two forward passes to get both the logits and the loss
@@ -108,6 +119,9 @@ def huggingface_forward(model, batch):
 
 
 def verify_step(forward1, model1, forward2, model2, iterator):
+    # if mpu.is_pipeline_first_stage() and mpu.get_tensor_model_parallel_rank() == 0:
+    # mpu.get_tensor_model_parallel_rank(), logits1.size(), logits2.size()
+    # model2 ==> huggingface
     batch = get_batch(iterator)
     logits1, loss1 = forward1(model1, batch)
     logits2, loss2 = forward2(model2, batch)
@@ -117,13 +131,16 @@ def verify_step(forward1, model1, forward2, model2, iterator):
     logits2 = logits2.cpu()
     abs_error = torch.abs(logits1 - logits2)
     print("Max absoulute error in the logits:",
-          f"max={torch.max(abs_error):.6f}, avg={torch.mean(abs_error):.6f}")
+        f"max={torch.max(abs_error):.6f}, avg={torch.mean(abs_error):.6f}")
     assert loss1.size() == loss2.size()
     loss1 = loss1.cpu()
     loss2 = loss2.cpu()
     loss_error = torch.abs(loss1 - loss2)
     print(f"Abs loss error: {loss_error:.6f} "
-          f"Our loss: {loss1:.3f}, theirs: {loss2:.3f}")
+        f"Our loss: {loss1:.3f}, theirs: {loss2:.3f}")
+    
+    # else:
+    #     print(f"only verify on rank = 0")
 
 
 # heavily inspired from megatron.training.pretrain
@@ -138,12 +155,25 @@ def verify(args, train_valid_test_dataset_provider,
     # megatron.initialize.set_jit_fusion_options(args)
     megatron.initialize.set_jit_fusion_options()
     
+    # override checkpoint args
+    setattr(args, "consumed_train_samples", 0)
+    setattr(args, "split", "33, 33, 33")
+    
+    # with torch.no_grad():
+            
     print_rank_0("Megatron has been initialized!")
     model, optimizer, opt_param_schedulkr = setup_model_and_optimizer(
-        model_provider_func, model_type, 
+        model_provider_func, model_type, #model_wrap_with_ddp=False
         #args=args
     ) # returns -> model, optimizer, opt_param_scheduler
+    for module in model:
+        module.eval().requires_grad_(False)
     
+    # model = get_model(model_provider_func, wrap_with_ddp=False)  ### args error
+
+    # model = model[0]
+    # model.eval()
+
     update_num_microbatches(0, consistency_check=False)
 
     # override checkpoint args
@@ -151,8 +181,8 @@ def verify(args, train_valid_test_dataset_provider,
     setattr(args, "split", "33, 33, 33")
     
 
-    for module in model:
-        module.eval().requires_grad_(False)
+    # for module in model:
+    #     module.eval().requires_grad_(False)
     baseline_model = baseline_provider_func()
     print('==== Megatron model ====')
     print(model)
@@ -189,10 +219,23 @@ def extra_extra_args(parser):
     parser = extra_args_provider(parser)
     group = parser.add_argument_group(title="huggingface")
     group.add_argument("--huggingface_cache", default=None)
-    group.add_argument("--huggingface_device", default="cuda:0")
+    group.add_argument("--huggingface_device", default="cuda:1")
     group.add_argument("--hf_weights", help="Path to HF weights")
     return parser
 
+def gpt_model_provider(pre_process=True, post_process=True):
+    """Build the model."""
+
+    print_rank_0('building GPT model ...')
+    config = core_transformer_config_from_args(get_args())
+    model = GPTModel(
+        config,
+        num_tokentypes=0,
+        parallel_output=False,  # !!!!
+        pre_process=pre_process,
+        post_process=post_process
+    )
+    return model
  
 if __name__ == "__main__":
     # INITIALIZATION
@@ -204,7 +247,7 @@ if __name__ == "__main__":
                 "lr": 1.0}
     initialize_megatron(extra_extra_args, args_defaults=defaults)
     args = get_args()
-    
+    # args.exit_on_missing_checkpoint = True
 
     # TODO: tensor_model_parallel_size from checkpoint != current tensor_model_parallel_size
     # - tensor_model_parallel_size is forced to be world_size
@@ -213,7 +256,9 @@ if __name__ == "__main__":
 
     # VERIFICATION
     verify(args, train_valid_test_datasets_provider,
-           model_provider, megatron_forward,
+           gpt_model_provider, megatron_forward,
            hf_provider, huggingface_forward,
            ModelType.encoder_or_decoder,)
     print("Verification done, we are set now woohoo! :)")
+
+    print("""Expected outputs will yield average absolute error smaller than 0.01 when using 32-bit precision and 0.1 when using 16-bit precision.""")
