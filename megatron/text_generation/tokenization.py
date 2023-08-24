@@ -17,6 +17,7 @@ def detokenize_generations(tokens_gpu_tensor,
 
     tokenizer = get_tokenizer()
     args = get_args()
+    token_lists = []
     prompts_plus_generations = []
     if return_segments:
         prompts_plus_generations_segments = []
@@ -25,6 +26,7 @@ def detokenize_generations(tokens_gpu_tensor,
     lengths = lengths_gpu_tensor.cpu().numpy().tolist()
     for sequence_tokens, length in zip(tokens, lengths):
         sequence_tokens = sequence_tokens[:length]
+        token_lists.append(sequence_tokens)
         prompts_plus_generations.append(
             tokenizer.detokenize(sequence_tokens))
         if return_segments:
@@ -47,10 +49,10 @@ def detokenize_generations(tokens_gpu_tensor,
             prompts_plus_generations_segments.append(words)
 
     if return_segments:
-        return tokens, prompts_plus_generations, \
+        return token_lists, prompts_plus_generations, \
             prompts_plus_generations_segments
 
-    return tokens, prompts_plus_generations
+    return token_lists, prompts_plus_generations
 
 
 def tokenize_prompts(prompts=None, tokens_to_generate=None,
