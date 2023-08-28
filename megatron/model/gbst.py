@@ -52,7 +52,7 @@ class GBSTLayer(torch.nn.Module):
         # TODO fix downsampling with causality; max(subblock_width, downsample_rate)?
         all_block_scores = []
         all_sequences = []
-        for subword_len in range(1, self.max_subword_block_width):
+        for subword_len in range(1, self.max_subword_block_width + 1):
             padded_input = inputs
             # Pad the sequence length if needed.
             if length % subword_len != 0:
