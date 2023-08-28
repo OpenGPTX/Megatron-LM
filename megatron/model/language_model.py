@@ -5,7 +5,7 @@
 import torch
 import torch.nn.functional as F
 
-from megatron import get_args
+from megatron import get_args, get_tokenizer
 from megatron.core import mpu, tensor_parallel
 from megatron.core.enums import ModelType
 from megatron.core.models.common.rotary_pos_embedding import RotaryEmbedding
@@ -171,6 +171,23 @@ class Embedding(MegatronModule):
                 block_attention=config.gbst_block_attention,
                 conv_kernel_size=config.gbst_conv_kernel_size,
             )
+            self.keep_causality = hasattr(args, '_is_gpt') and args._is_gpt
+            if self.keep_causality:
+                assert (
+                    args.max_position_embeddings is None
+                    or args.max_position_embeddings >= (
+                        (
+                            args.seq_length + self.gbst.causality_offset
+                        ) // self.gbst.downsample_rate
+                    )
+                )
+
+            tokenizer = get_tokenizer()
+            self.has_pad_token = True
+            try:
+                assert tokenizer.pad is not None
+            except Exception:
+                self.has_pad_token = False
 
         # Position embedding (serial).
         self.add_position_embedding = \
@@ -231,6 +248,24 @@ class Embedding(MegatronModule):
         self.init_method(self.tokentype_embeddings.weight)
 
     def forward(self, input_ids, position_ids, tokentype_ids=None):
+        if self.use_gbst and self.keep_causality and self.has_pad_token:
+            input_ids = self.gbst.shift_for_causality(input_ids)
+            # TODO We assume position IDs are standard `arange`s and
+            #      that we can just append to them to fix increased
+            #      sequence lengths. May especially cause issues with
+            #      inference. Also does not handle `reset_position_ids`.
+            position_ids = torch.cat([
+                position_ids,
+                torch.arange(
+                    len(position_ids),
+                    len(position_ids) + self.gbst.causality_offset,
+                    device=position_ids.device,
+                    dtype=position_ids.dtype,
+                ).unsqueeze(0).expand_as(position_ids),
+            ], dim=-1)
+            # TODO Is it possible to handle `tokentype_ids`?
+            assert tokentype_ids is None
+
         # Embeddings.
         if self.embedding_weights_in_fp32:
             self.word_embeddings = self.word_embeddings.to(torch.float32)
@@ -242,7 +277,10 @@ class Embedding(MegatronModule):
         if self.use_gbst:
             # [b s h] --> [b h s]
             words_embeddings = words_embeddings.transpose(-2, -1)
-            words_embeddings = self.gbst(words_embeddings)
+            words_embeddings = self.gbst(
+                words_embeddings,
+                keep_causality=self.keep_causality and not self.has_pad_token,
+            )
             # [b h s] --> [b s h], where s is smaller than before
             words_embeddings = words_embeddings.transpose(-2, -1).contiguous()
 
