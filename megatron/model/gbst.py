@@ -33,23 +33,62 @@ class GBSTLayer(torch.nn.Module):
         self.block_attention = block_attention
         self.block_scoring_network = torch.nn.Linear(embed_dim, 1, bias=False)
 
-    def forward(self, inputs):
+    @property
+    def causality_offset(self):
+        """Return the offset to guarantee full causality after GBST.
+
+        Returns:
+            int Offset.
+        """
+        shift_right = (
+            max(self.conv_kernel_size - 1, 0)
+            + max(self.max_subword_block_width - 1, 0)
+            + max(self.downsample_rate - 1, 0)
+        )
+        return shift_right
+
+    def shift_for_causality(self, inputs, pad_id):
+        """Shift the character-scale input representation to guarantee full
+        causality after GBST.
+
+        Args:
+            inputs: Tensor of shape [batch_size, ..., seq_length].
+            pad_id: Optional[int/float] Token ID of the padding
+                token/padding value.
+
+        Returns:
+            Tensor of shape [batch_size, ..., seq_length].
+        """
+        # Fix causality of merged tokens.
+        shift_right = self.causality_offset
+        padding = (shift_right, 0) + (0, 0) * (inputs.dim() - 1)
+        assert len(padding) == inputs.dim() * 2
+        inputs = torch.nn.functional.pad(inputs, padding, value=pad_id)
+        return inputs
+
+    def forward(self, inputs, keep_causality=False):
         """Performs downsampling on the character-scale input representation.
 
         Args:
             inputs: float Tensor of shape [batch_size, embedding_size,
                 seq_length].
+            keep_causality: bool Whether to fix causality by inserting
+                zeros. Should only be used if the tokenizer does not
+                have a padding token, i.e., if
+                `self.shift_for_causality` cannot be used.
 
         Returns:
             <float>[batch_size, embedding_size,
                 seq_length / downsample_rate]. Downsampled sequences.
         """
+        if keep_causality:
+            inputs = self.shift_for_causality(inputs, pad_id=None)
+
         length = inputs.shape[-1]
 
         if self.conv_kernel_size:
             inputs = self.conv_layer(inputs)
 
-        # TODO fix downsampling with causality; max(subblock_width, downsample_rate)?
         all_block_scores = []
         all_sequences = []
         for subword_len in range(1, self.max_subword_block_width + 1):
