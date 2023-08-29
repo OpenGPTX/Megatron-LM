@@ -8,9 +8,11 @@ import torch
 from megatron.core import mpu
 
 from .communication import broadcast_float_list
-from .generation import (beam_search_and_return_on_first_stage,
-                         generate_tokens_probs_and_return_on_first_stage,
-                         score_and_return_on_first_stage)
+from .generation import (
+    beam_search_and_return_on_first_stage,
+    generate_tokens_probs_and_return_on_first_stage,
+    score_and_return_on_first_stage,
+)
 from .tokenization import detokenize_generations, tokenize_prompts
 
 
@@ -83,7 +85,13 @@ def generate_and_post_process(
             tokens,
         )
         if return_is_max_logprobs:
-            result = result + (is_max_logprobs.tolist(),)
+            is_max_logprobs = is_max_logprobs.tolist()
+            lengths = lengths.tolist()
+
+            for i, length in enumerate(lengths):
+                is_max_logprobs[i] = is_max_logprobs[i][: length - 1]
+
+            result = result + (is_max_logprobs,)
         return result
 
     return None
