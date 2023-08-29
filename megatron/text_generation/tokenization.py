@@ -97,6 +97,8 @@ def _tokenize_prompts_and_batch(prompts, tokens_to_generate, add_BOS):
     """
 
     tokenizer = get_tokenizer()
+    args = get_args()
+
     if isinstance(prompts[0], str):
         # Tokenize all the prompts.
         if add_BOS:
@@ -120,9 +122,12 @@ def _tokenize_prompts_and_batch(prompts, tokens_to_generate, add_BOS):
     max_prompt_len = max(prompts_length)
     # Number of tokens in the each sample of the batch.
     samples_length = max_prompt_len + tokens_to_generate
+
+    padded_length = args.seq_length if args.pad_to_seq_length else samples_length
+
     # Now update the list of list to be of the same size: samples_length.
     for prompt_tokens, prompt_length in zip(prompts_tokens, prompts_length):
-        padding_size = samples_length - prompt_length
+        padding_size = padded_length - prompt_length
         prompt_tokens.extend([tokenizer.eod] * padding_size)
 
     # Now we are in a structured format, we can convert to tensors.

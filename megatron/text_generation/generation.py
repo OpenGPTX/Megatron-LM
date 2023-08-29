@@ -38,22 +38,26 @@ def score_and_return_on_first_stage(
     args = get_args()
 
     batch_size = tokens.size(0)
+    seq_length = tokens.size(1)
     max_prompt_length = lengths.max().item()
-    assert max_prompt_length == tokens.size(1)
+    if args.pad_to_seq_length:
+        assert seq_length == args.seq_length
+    else:
+        assert seq_length == max_prompt_length
 
-    if max_prompt_length > args.max_position_embeddings:
+    if seq_length > args.max_position_embeddings:
         raise ValueError("Length of prompt + tokens_to_generate longer than allowed")
 
-    if max_prompt_length * batch_size > args.max_tokens_to_oom:
+    if seq_length * batch_size > args.max_tokens_to_oom:
         raise ValueError(
             "Too many tokens.  "
-            + str(max_prompt_length * batch_size)
+            + str(seq_length * batch_size)
             + " is greater than "
             + str(args.max_tokens_to_oom)
         )
 
     # forward step.
-    forward_step = ForwardStep(model, batch_size, max_prompt_length)
+    forward_step = ForwardStep(model, batch_size, seq_length)
 
     # ===================
     # Pre-allocate memory
@@ -63,8 +67,8 @@ def score_and_return_on_first_stage(
     output_log_probs = None
     is_max_logprobs = None
 
-    output_log_probs_size = (batch_size, max_prompt_length - 1)
-    is_max_logprobs_size = (batch_size, max_prompt_length - 1)
+    output_log_probs_size = (batch_size, seq_length - 1)
+    is_max_logprobs_size = (batch_size, seq_length - 1)
 
     if mpu.is_pipeline_last_stage():
         output_log_probs = torch.empty(

@@ -470,7 +470,10 @@ def _add_inference_args(parser):
                        choices=["megatron", "huggingface"],
                        help='Select either Megatron or Huggingface as the '
                        'Bert embedder.')
-
+    group.add_argument('--pad-to-seq-length', action='store_true', default=False,
+                       help='Always add to max seq length supported by model and' 
+                       'not max seq length found in a batch.')
+    
     return parser
 
 
