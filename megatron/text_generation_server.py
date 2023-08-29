@@ -91,7 +91,7 @@ class MegatronGenerate(Resource):
                     400,
                 )
 
-        top_k = 0.0
+        top_k = 0
         if "top_k" in request.get_json():
             top_k = request.get_json()["top_k"]
             if not (type(top_k) == int):
