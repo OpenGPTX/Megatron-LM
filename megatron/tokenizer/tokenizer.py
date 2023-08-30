@@ -84,13 +84,16 @@ def build_tokenizer(args):
     elif args.tokenizer_type == "OpenGPTX-HFTokenizer":
         _assert_gptx_tokenizer_available(args.tokenizer_type, HFTokenizer)
         tokenizer = HFTokenizer.instantiate_from_file_or_name(model_file_or_name=args.tokenizer_model)
+        tokenizer.add_special_tokens(ul2_denoiser_tokens)
     elif args.tokenizer_type == "OpenGPTX-PretrainedHFTokenizer":
         _assert_gptx_tokenizer_available(
             args.tokenizer_type, PretrainedHFTokenizer)
         tokenizer = PretrainedHFTokenizer.instantiate_from_file_or_name(model_file_or_name=args.tokenizer_model)
+        tokenizer.add_special_tokens(ul2_denoiser_tokens)
     elif args.tokenizer_type == "OpenGPTX-SPTokenizer":
         _assert_gptx_tokenizer_available(args.tokenizer_type, SPTokenizer)
         tokenizer = SPTokenizer.instantiate_from_file_or_name(model_file_or_name=args.tokenizer_model)
+        tokenizer.add_special_tokens(ul2_denoiser_tokens)
     else:
         raise NotImplementedError('{} tokenizer is not '
                                   'implemented.'.format(args.tokenizer_type))
