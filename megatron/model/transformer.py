@@ -220,21 +220,26 @@ class SwitchMLP(MegatronModule):
         max_ind = max_ind.view(-1) # [s*b]
 
         output_total = torch.empty_like(hidden_states)
-        output_bias_total = torch.empty_like(hidden_states)
+        if self.experts[0].dense_4h_to_h.skip_bias_add:
+            output_bias_total = torch.empty_like(hidden_states)
+        else:
+            output_bias_total = None
         #TODO (rprenger) This does each expert in serial, but it could be parallelized
 
         for expert_num, expert in enumerate(self.experts):
             local_indices = (max_ind == expert_num).nonzero()
             hidden = hidden_states[local_indices,:]
             output, output_bias = expert(hidden)
-            output_bias = output_bias.expand_as(output)
             output_total[local_indices,:] = output
-            output_bias_total[local_indices,:] = output_bias
+            if output_bias_total is not None:
+                output_bias = output_bias.expand_as(output)
+                output_bias_total[local_indices,:] = output_bias
 
         output_total = output_total*max_prob
-        output_bias_total = output_bias_total*max_prob
         output_total = output_total.view(s, b, h)
-        output_bias_total = output_bias_total.view(s, b, h)
+        if output_bias_total is not None:
+            output_bias_total = output_bias_total*max_prob
+            output_bias_total = output_bias_total.view(s, b, h)
 
         return output_total, output_bias_total
 
