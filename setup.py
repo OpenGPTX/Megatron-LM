@@ -104,7 +104,7 @@ setuptools.setup(
     packages=['megatron.core', 'megatron.core.pipeline_parallel', 'megatron.core.tensor_parallel'],
     install_requires=install_requires,
     extras_require={
-        "dev": ["black", "flake8", "pre-commit", "pytest", "pytest-cov"]}
+        "dev": ["black", "flake8", "pre-commit", "pytest", "pytest-cov"]},
     # Add in any packaged data.
     include_package_data=True,
     # PyPI package information.
