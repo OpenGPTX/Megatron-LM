@@ -6,6 +6,7 @@ from datetime import datetime
 import math
 import sys
 import time
+from typing import List, Optional
 # The earliest we can measure the start time.
 _TRAIN_START_TIME = time.time()
 import torch

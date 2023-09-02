@@ -1,0 +1,53 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "run_pretrain_gpt",
+            "type": "python",
+            "request": "launch",
+            "program": "tests/test_training.py",
+            "args": [
+                "--num-layers", "2",
+                "--num-attention-heads", "12",
+                "--hidden-size", "768",
+                "--seq-length", "2048",
+                "--max-position-embeddings", "2048",
+                "--position-embedding-type", "rope",
+                "--no-async-tensor-model-parallel-allreduce",
+                "--swiglu",
+                "--log-num-zeros-in-grad",
+                "--attention-dropout", "0.1",
+                "--hidden-dropout", "0.1",
+                "--weight-decay", "0.01",
+                "--clip-grad", "1.0",
+                "--adam-beta1", "0.9",
+                "--adam-beta2", "0.999",
+                "--micro-batch-size", "2",
+                "--train-samples", "100",
+                "--optimizer", "adam",
+                "--dataloader-type", "single",
+                "--init-method-std", "0.02",
+                "--lr", "1e-6",
+                "--lr-decay-style", "constant",
+                "--bf16",
+                "--tensor-model-parallel-size", "2",
+                "--pipeline-model-parallel-size", "1",
+                "--distributed-backend", "nccl",
+                "--eval-iters", "1",
+                "--eval-interval", "10",
+                "--data-path", "tests/resources/openwebtext_200_text_document",
+                "--tokenizer-type", "OpenGPTX-HFTokenizer",
+                "--tokenizer-model", "tests/resources/tokenizer/bpe_tokenizer.json",
+                "--seed", "42",
+                "--reset-attention-mask",
+                "--reset-position-ids"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "envFile": "${workspaceFolder}/.env",
+        },
+    ]
+}

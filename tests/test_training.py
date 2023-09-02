@@ -4,6 +4,15 @@ import torch
 from pathlib import Path
 
 from megatron.training import pretrain
+from pretrain_gpt import extra_args_provider, forward_step, model_provider, train_valid_test_datasets_provider
+from megatron.core.enums import ModelType
+
+try:
+    from torch.distributed.elastic.multiprocessing.errors import record
+except ImportError:
+    # noop
+    def record(fn):
+        return fn
 
 WORKER_TIMEOUT = 120
 
@@ -95,76 +104,20 @@ def dist_launcher(run_func, world_size, master_port, *func_args, **func_kwargs):
         pytest.fail("\n".join(failures), pytrace=False)
 
     return dict(return_dict)
-@pytest.mark.skipif(not torch.cuda.is_available(), reason="no cuda available")
-@pytest.mark.parametrize("arg_values", [
-    ["--num-layers",
-     "2",
-     "--hidden-size",
-     "768",
-     "--position-embedding-type",
-     "rope",
-     "--swiglu",
-     "--log-num-zeros-in-grad",
-     "--attention-dropout",
-     "0.1",
-     "--hidden-dropout",
-     "0.1",
-     "--weight-decay",
-     "0.01",
-     "--clip-grad",
-     "1.0",
-     "--adam-beta1"
-     "0.9",
-    "--adam-beta2",
-    "0.999",
-     "--micro-batch-size",
-     "2",
-     "--train-samples",
-     "100"
-     "--optimizer",
-     "adam",
-     "--dataloader-type",
-     "single",
-    "--init-method-std",
-    "0.02",
-     "--lr",
-     "1e-6",
-     "--lr-decay-style",
-     "constant",
-     "--bf16",
-     "--tensor-model-parallel-size",
-     "2",
-     "--pipeline-model-parallel-size",
-     "1",
-     "--distributed-backend",
-     "nccl",
-     "--eval-iters",
-     "1"
-     "--eval-interval",
-     "10",
-     "--data-path",
-    str(Path(__file__).absolute().joinpath("resources","openwebtext_200_text")),
-    "--tokenizer-type",
-     "OpenGPTX-HFTokenizer",
-     "--tokenizer-model",
-    str(Path(__file__).absolute().joinpath("resources","tokenizer","bpe_tokenizer.json")),
-    "--seed",
-     "42",
-     "--reset-attention-mask",
-     "--reset-position-ids"
-     ]
-])
+
+@record
+def run_test_training_debug_distributed(return_dict):
+    pretrain(train_valid_test_datasets_provider,
+            model_provider,
+            ModelType.encoder_or_decoder,
+            forward_step,
+            extra_args_provider=extra_args_provider,
+            args_defaults={'tokenizer_type': 'GPT2BPETokenizer'})
 
 
-@pytest.mark.skipif(not torch.cuda.is_available(), reason="no cuda available")
-@pytest.mark.skipif(torch.cuda.device_count() < 2, reason="needs to gpus to run")
-@pytest.mark.parametrize("arg_values", [
-    ["--num-layers", "2", "--hidden-size", "768", "--num-attention-heads", "12", "--micro-batch-size", "2", "--encoder-seq-length", "2048", "--max-position-embeddings", "2048", "--vocab-file", str(Path(__file__).parent.absolute() / "data/gpt2/gpt2-tiny-vocab.json"), "--merge-file", str(Path(__file__).parent.absolute() / "data/gpt2/gpt2-tiny-merges.txt"), "--data-path", str(Path(__file__).parent.absolute() /"data/gpt2/meg-gpt2-openwebtext_text_document"), "--split", "40,30,30", "--train-iters", "10", "--lr", "0.0001", "--min-lr", "0.00001", "--bf16", "--reset-attention-mask", "--no-masked-softmax-fusion", "--deepspeed", "--zero-stage", "0", "--deepspeed_config", str(Path(__file__).parent.absolute() /"ds_config_zero_0.json"), "--eval-iters", "-1"]
-])
-def test_training_debug_distributed(arg_values):
+if __name__ == "__main__":
     _ = dist_launcher(
-       pretrain,
-       world_size=4,
-       master_port=find_free_port(),
-       args=arg_values
-    )
+       run_test_training_debug_distributed,
+       world_size=2,
+       master_port=find_free_port()
+    )  
