@@ -74,4 +74,3 @@ class TestFloat16Module:
         x = torch.ones((2, 2)).cuda()
         # inputs are converted to bf16 then outputs are converted to fp32
         assert bf16_module(x).dtype == torch.float32
-

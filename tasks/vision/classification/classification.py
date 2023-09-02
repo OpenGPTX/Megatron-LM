@@ -65,7 +65,7 @@ def classification():
 
         # Forward model.
         output_tensor = model(images)
-      
+
         return output_tensor, partial(cross_entropy_loss_func, labels)
 
     """Finetune/evaluate."""
@@ -78,4 +78,3 @@ def classification():
 
 def main():
     classification()
-

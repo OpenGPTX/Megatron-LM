@@ -3,7 +3,6 @@
 from dataclasses import dataclass
 from typing import Callable
 
-import torch
 import torch.nn.functional as F
 
 from megatron.core import ModelParallelConfig
@@ -208,13 +207,13 @@ class TransformerConfig(ModelParallelConfig):
             self.attention_softmax_in_fp32 = True
 
         if self.recompute_granularity is not None:
-            if not self.recompute_granularity in ['full', 'selective']:
+            if self.recompute_granularity not in ["full", "selective"]:
                 raise ValueError(
                     f'When using recompute_granuarlity: {self.recompute_granularity} must be "full" or "selective".'
                 )
 
             if self.recompute_method is not None:
-                if not self.recompute_method in ['block', 'uniform']:
+                if self.recompute_method not in ["block", "uniform"]:
                     raise ValueError(
                         f'recompute_method: {self.recompute_method} must be "block" or "uniform".'
                     )
@@ -250,7 +249,7 @@ class TransformerConfig(ModelParallelConfig):
                 )
 
             if self.activation_func != F.gelu:
-                raise ValueError(f'When bias_gelu_fusion is True, activation_func must be F.gelu.')
+                raise ValueError('When bias_gelu_fusion is True, activation_func must be F.gelu.')
 
         if self.init_method is None:
             self.init_method = init_method_normal(self.init_method_std)

@@ -3,7 +3,6 @@ import torch
 
 from megatron import get_args, print_rank_0
 from megatron.checkpointing import get_checkpoint_tracker_filename, get_checkpoint_name
-from megatron.model import BertModel
 from .module import MegatronModule
 from megatron.core import mpu
 from megatron.model.enums import AttnMaskType
@@ -200,5 +199,3 @@ class IREncoderBertModel(MegatronModule):
             state_dict[self._language_model_key], strict=strict)
         self.ict_head.load_state_dict(
             state_dict[self._ict_head_key], strict=strict)
-
-

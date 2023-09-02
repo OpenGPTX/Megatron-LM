@@ -34,7 +34,7 @@ class FaissParallelAddIndex(FaissBaseIndex):
         via index.sa_encode(), and the resulting codes are saved to disk.
         '''
 
-        args = get_retro_args()
+        get_retro_args()
 
         # Embed block.
         embeddings = self.embed_text_dataset_block(

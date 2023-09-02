@@ -47,7 +47,7 @@ def compute_feature_bank(model):
     )
     classes = len(train_ds.classes)
     dataloader = build_data_loader(train_ds)
-     
+
     for m in model:
         m.eval()
 
@@ -59,7 +59,7 @@ def compute_feature_bank(model):
             feature = F.normalize(teacher_feature.float(), dim=1)
             feature_bank.append(feature)
             feature_label.append(labels)
-    
+
     for m in model:
         m.train()
 

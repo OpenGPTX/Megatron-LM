@@ -3,7 +3,6 @@
 """Transformer based language model."""
 
 import torch
-import torch.nn.functional as F
 
 from megatron import get_args
 from megatron.core import mpu, tensor_parallel
@@ -55,7 +54,7 @@ def get_language_model(config, num_tokentypes, add_pooler,
                        decoder_attn_mask_type=AttnMaskType.causal,
                        pre_process=True, post_process=True):
     """Build language model and return along with the key to save."""
-    args = get_args()
+    get_args()
     if config.init_method is None:
         config.init_method = init_method_normal(config.init_method_std)
 
@@ -213,7 +212,7 @@ class Embedding(MegatronModule):
         self.tokentype_embeddings = torch.nn.Embedding(num_tokentypes,
                                                        self.hidden_size)
         # Initialize the token-type embeddings.
-        args = get_args()
+        get_args()
         self.init_method(self.tokentype_embeddings.weight)
 
     def forward(self, input_ids, position_ids, tokentype_ids=None):

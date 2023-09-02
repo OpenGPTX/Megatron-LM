@@ -1,7 +1,6 @@
 #!/usr/bin/env python
-# -*- coding: UTF-8 -*-
 #copyright (c) go-hiroaki & Chokurei
-#email: guangmingwu2010@gmail.com 
+#email: guangmingwu2010@gmail.com
 #       guozhilingty@gmail.com
 #
 #
@@ -9,7 +8,6 @@
 # LICENSE file in the root directory of this source tree.
 import math
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 
 eps = 1e-6
@@ -79,7 +77,7 @@ def _get_weights(y_true, nb_ch):
     """
     args:
         y_true : 3-d ndarray in [batch_size, img_rows, img_cols]
-        nb_ch : int 
+        nb_ch : int
     return [float] weights
     """
     batch_size, img_rows, img_cols = y_true.shape
@@ -151,7 +149,6 @@ class OAAcc(object):
         return (tp+tn)/total
         """
         batch_size, chs, img_rows, img_cols = y_true.shape
-        device = y_true.device
         if chs == 1:
             y_pred = _binarize(y_pred, threshold)
             y_true = _binarize(y_true, threshold)
@@ -519,7 +516,7 @@ class AE(object):
 
     def __repr__(self):
         return "AE"
-    
+
     def __call__(self, y_pred, y_true):
         """
         args:
@@ -558,15 +555,15 @@ if __name__ == "__main__":
             metric = SSIM()
             acc = metric(y_pred, y_true).item()
             print("{} ==> {}".format(repr(metric), acc))
-                  
+
             metric = LPIPS(cuda)
             acc = metric(y_pred, y_true).item()
             print("{} ==> {}".format(repr(metric), acc))
-            
+
             metric = AE()
             acc = metric(y_pred, y_true).item()
             print("{} ==> {}".format(repr(metric), acc))
-            
+
             ########### accuracy metrics
             metric = OAAcc()
             maccu, accu = metric(y_pred, y_true)
@@ -591,4 +588,3 @@ if __name__ == "__main__":
             metric = Jaccard()
             mjacc, jacc = metric(y_pred, y_true)
             print('mJacc:', mjacc, 'Jacc', jacc)
-

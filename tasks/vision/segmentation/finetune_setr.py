@@ -87,7 +87,7 @@ def segmentation():
         if not model.training:
             images, masks, _, _ = slidingcrops(images, masks)
         #print_rank_0("images size = {}".format(images.size()))
-       
+
         if not model.training:
             output_tensor = torch.cat([model(image) for image in torch.split(images, args.micro_batch_size)])
         else:
@@ -210,4 +210,3 @@ def segmentation():
 
 def main():
     segmentation()
-

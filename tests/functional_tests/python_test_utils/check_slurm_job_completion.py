@@ -16,4 +16,3 @@ exit_code = result[20]
 
 assert status == "COMPLETED", f"Job {sys.argv[1]} not completed."
 assert exit_code == "0:0", f"Job {sys.argv[1]} did not exit successfully."
-

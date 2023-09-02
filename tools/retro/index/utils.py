@@ -1,18 +1,9 @@
 # Copyright (c) 2023, NVIDIA CORPORATION.  All rights reserved.
 
-import concurrent
-import gc
 import glob
-import numpy as np
 import os
-import psutil
-import time
-import torch
-from tqdm import tqdm
 
-from megatron import get_retro_args, print_rank_0
-from tools.retro.db.utils import get_indexed_dataset_infos
-from tools.retro.external_libs import h5py
+from megatron import get_retro_args
 
 
 def get_index_dir():

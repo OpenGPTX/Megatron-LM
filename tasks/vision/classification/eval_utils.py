@@ -2,7 +2,6 @@
 
 """Evaluation utilities."""
 
-import os
 from functools import partial
 
 import torch

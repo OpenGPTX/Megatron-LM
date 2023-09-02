@@ -38,13 +38,13 @@ To perform unconditional generation for a Megatron LM, we provide an example scr
 #                                                                              [num of samples]     [model checkpoint]          [random seed]
 bash examples/detxoify_lm/self_generation/selfgenerate-1.3b-unconditional.sh       1000          checkpoints/gpt3/gpt3-1.3b/      2333
 ```
-This will generate a jsonl file of  1000 generated text (as a toy example) at `selfgeneration/unconditional_generation_gpt3-1.3b/2333.out`. 
+This will generate a jsonl file of  1000 generated text (as a toy example) at `selfgeneration/unconditional_generation_gpt3-1.3b/2333.out`.
 
 Note that you may want to set your own gpt2 vocab and merge file dir, as well as your output data dir in `selfgenerate-1.3b-unconditional.sh`.
 
 ### Annotation
 
-We then use Perspective API to annotate the self generated corpus. Note that you need to fill in your own Perspective API key in the `examples/detoxify_lm/perspective_api_annotate.py`. 
+We then use Perspective API to annotate the self generated corpus. Note that you need to fill in your own Perspective API key in the `examples/detoxify_lm/perspective_api_annotate.py`.
 
 ```bash
 python examples/detxoify_lm/perspective_api_annotate.py --data-path [input-data-path] --out-path [output-data-path] --workers 70
@@ -65,7 +65,7 @@ For example,
 python examples/detxoify_lm/annotations/filter-selfgeneration.py --data-path  selfgeneration/unconditional_generation_gpt3-1.3b/2333.annotated.out --out-path  selfgeneration/unconditional_generation_gpt3-1.3b/2333.annotated.nontoxic.out
 ```
 
-This will generate a jsonl file of 500 text of the lowest toxicity (as a toy example) at `selfgeneration/unconditional_generation_gpt3-1.3b/2333.annotated.nontoxic.out`. 
+This will generate a jsonl file of 500 text of the lowest toxicity (as a toy example) at `selfgeneration/unconditional_generation_gpt3-1.3b/2333.annotated.nontoxic.out`.
 
 
 ### Preprocess
@@ -85,7 +85,7 @@ which will be used in the following domain-adative training step.
 
 ### Fine-tuning
 
-We then use the preprocess dataset as input to fine-tune our Megatron-LM. 
+We then use the preprocess dataset as input to fine-tune our Megatron-LM.
 ```bash
 #                                                                          [fine-tuning dataset]                                                                      [output-dir]                             [lr]    [bs]      [train-iters]                       [load checkpoint]
 bash examples/detxoify_lm/finetune_gpt_distributed-1.3b.sh    selfgeneration/unconditional_generation_gpt3-1.3b/2333.annotated.nontoxic_text_document         gpt3-1.3b-toy-example-lr-2e-5-bs-512             2e-5     512            78                          checkpoints/gpt3/gpt3-1.3b
@@ -103,9 +103,9 @@ bash examples/detxoify_lm/generate-1.3b.sh     augmented_prompts.jsonl      $SHA
 ```
 For example, this will generate the continuations in the file `augmented_prompts.jsonl_output_gpt3-1.3b-toy-example-lr-2e-5-bs-512_seed_31846.jsonl` (seed is a random generated number).
 
-Note that the input prompts are augmented so that each prompts appear 25 times to calculate the Expected Maximum Toxicity over 25 generations and Toxicity Probability,  
+Note that the input prompts are augmented so that each prompts appear 25 times to calculate the Expected Maximum Toxicity over 25 generations and Toxicity Probability,
 
-We then use Perspective API to evaluate the Expected Maximum Toxicity and Toxicity Probability.   
+We then use Perspective API to evaluate the Expected Maximum Toxicity and Toxicity Probability.
 
 ```bash
 python examples/detxoify_lm/perspective_api.py --data-path "augmented_prompts.jsonl_output_gpt3-1.3b-toy-example-lr-2e-5-bs-512_seed_31846.jsonl" --prompt-path prompts.jsonl --workers 30

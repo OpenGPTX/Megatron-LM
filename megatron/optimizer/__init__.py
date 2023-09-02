@@ -17,7 +17,7 @@ def get_param_groups(modules,
     """creates param groups based on weight decay condition (regularized vs non regularized)
        and learning rate scale condition (args.lr vs lr_mult * args.lr)
        scale_lr_cond is used during finetuning where head of the network requires a scaled
-       version of the base learning rate. 
+       version of the base learning rate.
     """
     wd_no_scale_lr = []
     wd_scale_lr = []

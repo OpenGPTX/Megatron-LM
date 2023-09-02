@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import List
 
 from ..mapping import CheckpointingException, ShardedStateDict, ShardedTensor, StateDict
 

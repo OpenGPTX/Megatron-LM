@@ -33,5 +33,3 @@ python tasks/main.py \
     --fp16 \
     --indexer-log-interval 1000 \
     --indexer-batch-size 128
-
-

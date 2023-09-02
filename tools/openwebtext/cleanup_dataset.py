@@ -4,9 +4,7 @@
 import ftfy
 import json
 from langdetect import detect
-import numpy as np
 import time
-import os
 import sys
 
 from tokenizer import Tokenizer
@@ -98,5 +96,3 @@ if __name__ == '__main__':
     print('and will write the results to {}'.format(output_filename))
 
     filter_corpus(input_filename, output_filename)
-
-

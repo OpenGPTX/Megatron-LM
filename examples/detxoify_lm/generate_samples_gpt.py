@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2020, NVIDIA CORPORATION.  All rights reserved.
 
 
@@ -10,10 +9,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                              os.path.pardir, os.path.pardir)))
 import torch
 from megatron import get_args
-from megatron import get_tokenizer
 from megatron import print_rank_0
 from megatron.checkpointing import load_checkpoint
-from megatron.core import mpu
 from megatron.initialize import initialize_megatron
 from megatron.model import GPTModel
 from megatron.training import get_model
@@ -187,7 +184,7 @@ def main():
     model = model[0]
 
     # Generate samples.
-    if args.sample_input_file != None:
+    if args.sample_input_file is not None:
         print(f"{args.sample_input_file}")
         generate_and_write_samples_conditional(model)
     else:

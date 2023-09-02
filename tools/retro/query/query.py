@@ -27,7 +27,7 @@ def get_index(ondisk=False):
 
     # Load index.
     index_wrapper = IndexFactory.get_index(args.retro_index_type)
-    index_dir = get_index_dir()
+    get_index_dir()
     added_index_path = index_wrapper.get_added_index_path()
     if ondisk:
         index = faiss.read_index(added_index_path, faiss.IO_FLAG_MMAP)
@@ -83,7 +83,7 @@ def query_embeddings(db_dataset, index,
         sample_dataset_idx = sample["dataset_idx"].item()
         sample_doc_ids = sample["doc_ids"].tolist()
         sample_doc_tuples = [(sample_dataset_idx, d) for d in sample_doc_ids]
-        
+
         # Get valid neighbors (!= -1).
         query_row = [ i for i in query_neighbor_ids[chunk_id-min_chunk_id]
                       if i >= 0 ]
@@ -140,7 +140,7 @@ def query_block_neighbors(db_dataset, query_dataset,
                           block):
     '''Query neighbors of a dataset block (i.e., range).'''
 
-    args = get_retro_args()
+    get_retro_args()
     n_chunks_per_sample = query_dataset.n_chunks_per_sample
 
     # Sample map.

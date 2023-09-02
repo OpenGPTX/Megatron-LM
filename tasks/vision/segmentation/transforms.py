@@ -4,15 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 
 import random
-import os
-import math
 import mmcv
-import torch
 import numpy as np
-import torchvision.transforms as T
-from torchvision import datasets
-from torch.utils.data import Dataset
-from megatron import print_rank_0
 from megatron import get_args
 from PIL import Image, ImageOps, ImageEnhance
 import torchvision.transforms as torch_tr
@@ -228,7 +221,7 @@ class RandomCrop(object):
         # crop semantic seg
         mask = self.crop(mask, crop_bbox)
         assert(img.size[0] == self.size[1] and img.size[1] == self.size[0])
-          
+
         return img, mask
 
 
@@ -343,7 +336,7 @@ def adjust_hue(img, hue_factor):
         PIL Image: Hue adjusted image.
     """
     if not(-0.5 <= hue_factor <= 0.5):
-        raise ValueError('hue_factor is not in [-0.5, 0.5].'.format(hue_factor))
+        raise ValueError('hue_factor is not in [-0.5, 0.5].'.format())
 
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
@@ -430,4 +423,3 @@ class ColorJitter(object):
         transform = self.get_params(self.brightness, self.contrast,
                                     self.saturation, self.hue)
         return transform(img)
-

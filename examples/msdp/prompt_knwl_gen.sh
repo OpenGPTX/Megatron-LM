@@ -15,7 +15,7 @@ DISTRIBUTED_ARGS="--nproc_per_node $WORLD_SIZE \
 CHECKPOINT_PATH=<PATH_OF_LANGUAGE_MODEL> (e.g., /357m)
 VOCAB_PATH=<PATH_OF_VOCAB_FILE> (e.g., /gpt2-vocab.json)
 MERGE_PATH=<PATH_OF_MERGE_FILE> (e.g., /gpt2-merges.txt)
-INPUT_PATH=<PATH_OF_PROCESSED_TEST_DATA_FILE> \ 
+INPUT_PATH=<PATH_OF_PROCESSED_TEST_DATA_FILE> \
         (e.g., /testseen_processed.txt)
 PROMPT_PATH=<PATH_OF_KNOWLEDGE_GENERATION_PROMPTS> \
         (e.g., /testseen_knowledge_prompts.json)
@@ -40,7 +40,7 @@ python -m torch.distributed.launch $DISTRIBUTED_ARGS ./tasks/msdp/main.py \
         --prompt-file ${PROMPT_PATH} \
         --prompt-type knowledge \
         --num-prompt-examples 10 \
-        --task MSDP-PROMPT 
+        --task MSDP-PROMPT
 
-# NOTE: If you use api for the model generation, please use 
-# the "--api-prompt" flag (setting this value as True). 
+# NOTE: If you use api for the model generation, please use
+# the "--api-prompt" flag (setting this value as True).

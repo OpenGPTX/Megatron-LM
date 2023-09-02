@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2020, NVIDIA CORPORATION.  All rights reserved.
 
 
@@ -15,7 +14,6 @@ from megatron import get_timers
 from megatron import get_tokenizer
 from megatron import print_rank_0
 from megatron.core import mpu
-from megatron.data.blendable_dataset import BlendableDataset
 from megatron.data.gpt_dataset import build_train_valid_test_datasets
 from megatron.model import GPTModel
 from megatron.core.enums import ModelType
@@ -80,7 +78,7 @@ def loss_func(loss_mask, output_tensor):
 
 def forward_step(data_iterator, model):
     """Forward step."""
-    args = get_args()
+    get_args()
     timers = get_timers()
 
     # Get the batch.

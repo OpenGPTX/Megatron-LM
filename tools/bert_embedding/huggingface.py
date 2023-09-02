@@ -95,7 +95,7 @@ class HuggingfaceEmbedder:
 
         # Embed dataset.
         for idx, out_dict in enumerate(_iter):
-            inp = out_dict["input"]
+            out_dict["input"]
             out = out_dict["output"]
             embeddings[start_idx] = out
             start_idx += 1

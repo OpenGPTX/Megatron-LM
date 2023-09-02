@@ -538,7 +538,7 @@ class MMapIndexedDataset(torch.utils.data.Dataset):
         np_array = np.frombuffer(self._bin_buffer, dtype=self._index.dtype,
                                  count=length, offset=ptr)
         return (np_array, mode) if mode is not None else np_array
-            
+
 
     @property
     def sizes(self):
@@ -582,7 +582,7 @@ class MMapIndexedDatasetBuilder(object):
         np_array = np.array(tensor.numpy(), dtype=self._dtype)
         self._data_file.write(np_array.tobytes(order='C'))
         self._sizes.append(np_array.size)
-        
+
         if self._multimodal:
             self._modes.append(mode)
 
@@ -591,7 +591,7 @@ class MMapIndexedDatasetBuilder(object):
         self._data_file.write(np_array.tobytes(order='C'))
         self._sizes.extend(sizes)
         self._doc_idx.append(len(self._sizes))
-        
+
         if self._multimodal:
             self._modes.extend(modes if modes is not None else [0]*sizes)
 
@@ -608,7 +608,7 @@ class MMapIndexedDatasetBuilder(object):
         offset = len(self._sizes)
         self._sizes.extend(index.sizes)
         self._doc_idx.extend((offset + index.doc_idx)[1:])
-        
+
         if self._multimodal:
             self._modes.extend(index.modes)
 

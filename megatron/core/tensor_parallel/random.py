@@ -12,10 +12,7 @@ from torch.cuda import device as device_ctx_manager
 from torch.utils.checkpoint import detach_variable
 
 from megatron.core.parallel_state import (
-    get_data_parallel_rank,
-    get_tensor_model_parallel_group,
     get_tensor_model_parallel_rank,
-    get_tensor_model_parallel_world_size,
 )
 from megatron.core.utils import safely_set_viewless_tensor_data
 

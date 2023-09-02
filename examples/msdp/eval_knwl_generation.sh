@@ -10,10 +10,10 @@ DISTRIBUTED_ARGS="--nproc_per_node $WORLD_SIZE \
                   --node_rank 0 \
                   --master_addr localhost \
                   --master_port 6000"
-                  
-MODEL_GEN_PATH=<PATH_OF_THE_KNOWLEDGE_GENERATION> \ 
+
+MODEL_GEN_PATH=<PATH_OF_THE_KNOWLEDGE_GENERATION> \
         (e.g., /testseen_knowledge_generations.txt)
-GROUND_TRUTH_PATH=<PATH_OF_THE_GROUND_TRUTH_KNOWLEDGE> \ 
+GROUND_TRUTH_PATH=<PATH_OF_THE_GROUND_TRUTH_KNOWLEDGE> \
         (e.g., /testseen_knowledge_reference.txt)
 
 python -m torch.distributed.launch $DISTRIBUTED_ARGS ./tasks/msdp/main.py \
@@ -32,10 +32,10 @@ python -m torch.distributed.launch $DISTRIBUTED_ARGS ./tasks/msdp/main.py \
 # Evaluate BLEU, METEOR, and ROUGE-L scores.
 ############################################
 
-# We follow the nlg-eval (https://github.com/Maluuba/nlg-eval) to 
-# evaluate the BLEU, METEOR, and ROUGE-L scores. 
+# We follow the nlg-eval (https://github.com/Maluuba/nlg-eval) to
+# evaluate the BLEU, METEOR, and ROUGE-L scores.
 
-# To evaluate on these metrics, please setup the environments based on 
+# To evaluate on these metrics, please setup the environments based on
 # the nlg-eval github, and run the corresponding evaluation commands.
 
 nlg-eval \

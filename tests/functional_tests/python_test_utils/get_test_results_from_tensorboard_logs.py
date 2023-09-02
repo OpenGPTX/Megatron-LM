@@ -1,7 +1,5 @@
 import os
 import sys
-import json
-import shutil
 import glob
 from tensorboard.backend.event_processing import event_accumulator
 
@@ -28,7 +26,7 @@ def read_tb_logs_as_list(path, summary_name):
         print(f'\nObtained the following list for {summary_name} ------------------')
         print(summary_list)
         return summary_list
-    raise FileNotFoundError(f"File not found matching: {path}/events*")    
+    raise FileNotFoundError(f"File not found matching: {path}/events*")
 
 def collect_train_test_metrics(logs_dir, run_name):
     # TODO: Fetch current baseline
@@ -42,7 +40,7 @@ def collect_train_test_metrics(logs_dir, run_name):
     iteration_time = read_tb_logs_as_list(logs_dir, "iteration-time")
 
     # First few iterations might take a little longer. So we take the last 70 percent of the timings
-    idx = len(iteration_time)//3   
+    idx = len(iteration_time)//3
     iteration_time_avg = sum(iteration_time[idx:])/len(iteration_time[idx:])
 
     train_metrics = {
@@ -69,5 +67,3 @@ if __name__ == '__main__':
     logs_dir = args[0] # eg /lustre/fsw/joc/shanmugamr/megatron/logs/
     run_name = args[1]
     collect_train_test_metrics(logs_dir, run_name)
-
-

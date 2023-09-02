@@ -7,7 +7,6 @@ from functools import reduce
 
 import torch
 
-from megatron.core import parallel_state
 
 
 def ensure_divisibility(numerator, denominator):

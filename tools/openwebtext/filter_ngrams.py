@@ -10,11 +10,8 @@ import argparse
 from functools import partial
 import json
 import multiprocessing
-import nltk
 import pickle
 import re
-import string
-import sys
 import time
 
 def get_words(text):
@@ -31,7 +28,7 @@ def split_text(text, start_position, remove_char_each_side, seq):
     punctuations = ".!?"
     pos = start_position - remove_char_each_side
     text_first = ""
-    while pos > 0 and not text[pos] in punctuations:
+    while pos > 0 and text[pos] not in punctuations:
         pos -= 1
     if pos > 0:
         text_first = text[0:pos+1]
@@ -41,7 +38,7 @@ def split_text(text, start_position, remove_char_each_side, seq):
 
     # last part of the text
     text_second = ""
-    while pos < len(text) and not text[pos] in punctuations:
+    while pos < len(text) and text[pos] not in punctuations:
         pos += 1
     if pos + 1 < len(text):
         text_second = text[pos+1:len(text)]
@@ -65,7 +62,7 @@ def check_and_clean_text(args, words, ngrams, text, start_position, \
             #print(" [increased]: {} {}".format(seq, ngrams[seq]), flush=True)
             if (start_position + len(seq) + 1) < len(text):
                 text_buf.append(text[start_position + len(seq) + 1:len(text)])
-            return False            
+            return False
 
         # split the text
         text_first, text_second = split_text(text, start_position, \
@@ -102,7 +99,7 @@ def free_ngram(line, args, key, ngrams, ngrams_freq_sorted):
         # get the first one from the buffer
         text = text_buf.pop(0)
         words, positions = get_words(text)
-        
+
         ngram_free = True
         # find each max n-grams and check dictionary
         for i in range(len(words) - args.max_ngram_size + 1):
@@ -289,15 +286,15 @@ def get_ngrams_below_threshold(args, ngrams, ngrams_below_threshold, \
     start_time = time.time()
     # get the ngrams frequency
     args.get_ngram_freq_only = True
- 
+
     # Open the large file to process in parallel
-    num_workers = args.num_threads 
+    num_workers = args.num_threads
     pool = multiprocessing.Pool(num_workers)
     fin = open(dedup_file, 'r', encoding='utf-8')
     free_ngram_abt_partial=partial(free_ngram, args=args, key=dedup_key, \
         ngrams=ngrams, ngrams_freq_sorted=ngrams_freq_sorted)
     free_ngrams_abt = pool.imap(free_ngram_abt_partial, fin, 500)
- 
+
     counter = 0
     for _, _, _, local_ngram in free_ngrams_abt:
         counter += 1
@@ -322,7 +319,7 @@ def get_ngrams_below_threshold(args, ngrams, ngrams_below_threshold, \
             print(" [threshold] {} {}".format(local_key, local_val), flush=True)
             counter_threshold += 1
             ngrams_below_threshold[local_key] = 1
-            
+
     print(' Ngrams below threshold {}'.format(counter_threshold), flush=True)
     fin.close()
 
@@ -346,7 +343,7 @@ def clean_ngrams_below_threshold(args, ngrams_below_threshold, dedup_file, \
     free_ngram_clean_partial=partial(free_ngram, args=args, key=dedup_key, \
         ngrams=ngrams_below_threshold, ngrams_freq_sorted=ngrams_freq_sorted)
     free_ngrams_clean = pool.imap(free_ngram_clean_partial, fin, 500)
- 
+
     out_f = open(args.output, 'wb')
 
     for text_buf_ngram_free, trimmed, myjson, _ in free_ngrams_clean:
@@ -390,7 +387,7 @@ def clean_ngrams_below_threshold(args, ngrams_below_threshold, dedup_file, \
 
     print(' [final]> processed {} documents in {:.2f} seconds ...'.
         format(counter, time.time() - start_time), flush=True)
-    
+
     print(' Total docs {} splitted {} ignored {} splits > theshold {} trimmed'\
         ' {}'.format(counter, splitted, ignored, split_mt_thld, trimmed_count)\
         , flush=True)

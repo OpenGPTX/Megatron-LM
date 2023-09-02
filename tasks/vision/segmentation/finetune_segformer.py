@@ -91,7 +91,7 @@ def segmentation():
         logits = output_tensor.contiguous().float()
         logits = resize(logits, size=masks.shape[1:],
                         mode='bilinear', align_corners=False)
-      
+
         # Cross-entropy loss.
         # weight = calculate_weight(masks, num_classes)
         loss = F.cross_entropy(logits, masks, ignore_index=ignore_index)
@@ -236,4 +236,3 @@ def segmentation():
 
 def main():
     segmentation()
-

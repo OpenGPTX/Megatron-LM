@@ -1,6 +1,5 @@
 from typing import Callable
 
-import torch
 import transformer_engine as te
 
 from megatron.core.parallel_state import get_tensor_model_parallel_group

@@ -116,7 +116,7 @@ def calculate_correct_answers(name, model, dataloader,
         tokens, types, labels, attention_mask = process_batch(batch_)
 
         # Forward model.
-        args = get_args()
+        get_args()
         output_tensor = model(tokens, attention_mask, tokentype_ids=types)
 
         return output_tensor, partial(loss_func, output_predictions, labels)

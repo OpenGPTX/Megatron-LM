@@ -6,10 +6,7 @@ import numpy as np
 import torch
 
 from megatron import (
-    get_args,
-    get_tokenizer,
-    mpu,
-    print_rank_0
+    get_tokenizer
 )
 from megatron.data.dataset_utils import (
     get_samples_mapping,

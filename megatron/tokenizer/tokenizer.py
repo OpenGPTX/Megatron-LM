@@ -47,7 +47,7 @@ def build_tokenizer(args):
     else:
         raise NotImplementedError('{} tokenizer is not '
                                   'implemented.'.format(args.tokenizer_type))
-    
+
     # Add vocab size.
     args.padded_vocab_size = _vocab_size_with_padding(tokenizer.vocab_size,
                                                       args)
@@ -146,8 +146,6 @@ class _BertWordPieceTokenizer(AbstractTokenizer):
         self._additional_special_tokens = []
 
         # (dsachan) Add BOS and EOS tokens
-        SPECIAL_TOKENS = {'eos_token': '[EOS]',
-                          'bos_token': '[BOS]'}
         self._bos_token = '[BOS]'
         self.add_token(self._bos_token)
         self._bos_token_id = self.vocab.get(self._bos_token)

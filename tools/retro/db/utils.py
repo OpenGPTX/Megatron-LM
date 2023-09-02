@@ -1,13 +1,11 @@
 # Copyright (c) 2023, NVIDIA CORPORATION.  All rights reserved.
 
-from collections import defaultdict
 import glob
 import json
 import numpy as np
 import os
-from tqdm import tqdm
 
-from megatron import get_retro_args, print_rank_0
+from megatron import get_retro_args
 from megatron.data.indexed_dataset import make_dataset as make_indexed_dataset
 from tools.retro.external_libs import h5py
 

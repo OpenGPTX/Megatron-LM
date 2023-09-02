@@ -3,11 +3,11 @@ The following steps show how to prepare training dataset to train the mode.
 # Libraries to install
 
 ```
-    pip install ftfy langdetect numpy torch pandas nltk sentencepiece boto3 tqdm regex bs4 newspaper3k htmlmin tldextract 
+    pip install ftfy langdetect numpy torch pandas nltk sentencepiece boto3 tqdm regex bs4 newspaper3k htmlmin tldextract
     git clone https://github.com/mattilyra/LSH
     cd LSH
     python setup.py install
-``` 
+```
 
 # Download the dataset
 
@@ -16,7 +16,7 @@ The following steps show how to prepare training dataset to train the mode.
 ```
 python blacklist_urls.py <path to the downloaded deduplicated URLs> <filename for clean urls. e.g. clean_urls.txt>
 ```
-3. Download the content from the clean urls with [openwebtext's utilities](https://github.com/eukaryote31/openwebtext/blob/master/download.py). 
+3. Download the content from the clean urls with [openwebtext's utilities](https://github.com/eukaryote31/openwebtext/blob/master/download.py).
 
 4. Merge the contents into one loose json file with 1 json per newline of the format `{'text': text, 'url': unique_url}`. It is important for the url to be unique.
 

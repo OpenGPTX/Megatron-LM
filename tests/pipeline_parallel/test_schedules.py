@@ -2,11 +2,9 @@ import torch
 from tests.test_utilities import Utils
 from megatron.core import ModelParallelConfig
 import megatron.core.pipeline_parallel.schedules as schedule
-from pytest_mock import mocker 
-import pytest
 
 rank = Utils.rank
- 
+
 def test_get_forward_backward_func():
     Utils.initialize_model_parallel(tensor_model_parallel_size=2, pipeline_model_parallel_size=1)
     assert(schedule.get_forward_backward_func() == schedule.forward_backward_no_pipelining)
@@ -21,7 +19,7 @@ def test_get_forward_backward_func():
 def test_deallocate_output_tensor():
     out = torch.tensor([[1, 2, 3], [4, 5, 6]])
     schedule.deallocate_output_tensor(out)
-    assert(out.nelement() == 1) 
+    assert(out.nelement() == 1)
 
 def test_forward_backward_func_without_pipeline_parallel(mocker):
     from megatron.core.pipeline_parallel import get_forward_backward_func
@@ -58,13 +56,13 @@ def test_forward_backward_func_without_pipeline_parallel(mocker):
         num_microbatches=4,
         seq_length=None,
         micro_batch_size=None,
-        forward_only=False) 
-    
+        forward_only=False)
+
     loss_reduced_expected = [{'loss_reduced': rank}, {'loss_reduced': rank}, {'loss_reduced': rank}, {'loss_reduced': rank}]
     for i,j in zip(losses_reduced, loss_reduced_expected):
         print(losses_reduced)
         assert(i['loss_reduced'] == j['loss_reduced'])
-    Utils.destroy_model_parallel() 
+    Utils.destroy_model_parallel()
 
 def test_forward_backward_func_with_pipeline_parallel(mocker):
     from megatron.core.pipeline_parallel import get_forward_backward_func
@@ -89,14 +87,13 @@ def test_forward_backward_func_with_pipeline_parallel(mocker):
 
     sequence_length = 512
     micro_batch_size = 8
-    hidden_size = 256
 
     config = ModelParallelConfig(
         pipeline_model_parallel_size = 4,
         sequence_parallel = False
     )
     model.config = config
-    
+
     losses_reduced = forward_backward_func(
         forward_step_func=forward_step_func,
         data_iterator=None,
@@ -105,15 +102,15 @@ def test_forward_backward_func_with_pipeline_parallel(mocker):
         num_microbatches= micro_batch_size,
         seq_length=sequence_length,
         micro_batch_size=micro_batch_size,
-        forward_only=True) 
-    
+        forward_only=True)
+
     loss_reduced_expected = [{'loss_reduced': rank}, {'loss_reduced': rank}, {'loss_reduced': rank}, {'loss_reduced': rank}]
     for i,j in zip(losses_reduced, loss_reduced_expected):
         print(losses_reduced)
         assert(i['loss_reduced'] == j['loss_reduced'])
-    Utils.destroy_model_parallel()  
+    Utils.destroy_model_parallel()
 
-""" 
+"""
 def test_forward_backward_func_with_interleaving(mocker):
     from megatron.core.pipeline_parallel import get_forward_backward_func
     from megatron.core.enums import ModelType
@@ -153,7 +150,7 @@ def test_forward_backward_func_with_interleaving(mocker):
             decoder_seq_length=sequence_length,
             sequence_parallel=False,
             forward_only=True)
-        
+
     with pytest.raises(RuntimeError):
         model.model_type = ModelType.encoder_or_decoder
         forward_backward_func(
@@ -178,7 +175,7 @@ def test_forward_backward_func_with_interleaving(mocker):
             tensor_shape=[sequence_length, micro_batch_size, hidden_size],
             decoder_seq_length=512,
             sequence_parallel=False,
-            forward_only=True)    
+            forward_only=True)
 
     model.model_type = ModelType.encoder_or_decoder
     losses_reduced = forward_backward_func(
@@ -190,12 +187,12 @@ def test_forward_backward_func_with_interleaving(mocker):
         tensor_shape=[sequence_length, micro_batch_size, hidden_size],
         decoder_seq_length=sequence_length,
         sequence_parallel=True,
-        forward_only=True) 
-    
+        forward_only=True)
+
     loss_reduced_expected = [{'loss_reduced': rank}, {'loss_reduced': rank}, {'loss_reduced': rank}, {'loss_reduced': rank}]
     for i,j in zip(losses_reduced, loss_reduced_expected):
         print(losses_reduced)
         assert(i['loss_reduced'] == j['loss_reduced'])
 
-    Utils.destroy_model_parallel()  
+    Utils.destroy_model_parallel()
 """

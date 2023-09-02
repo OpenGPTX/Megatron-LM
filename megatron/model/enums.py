@@ -8,7 +8,7 @@ class LayerType(enum.Enum):
     retro_encoder = 3
     retro_decoder = 4
     retro_decoder_with_retriever = 5
- 
+
 class AttnType(enum.Enum):
     self_attn = 1
     cross_attn = 2
@@ -24,4 +24,3 @@ class PositionEmbeddingType(enum.Enum):
     nope = 4
 
 # For backward compatibility with old model checkpoints
-from megatron.core.enums import ModelType

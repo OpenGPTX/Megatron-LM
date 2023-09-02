@@ -1,24 +1,15 @@
 # Copyright (c) 2023, NVIDIA CORPORATION.  All rights reserved.
 
-from collections import defaultdict
 from concurrent.futures import as_completed, ProcessPoolExecutor
-from functools import reduce
 import glob
-import json
 import numpy as np
 import os
-from pathlib import Path
-import threading
 import torch
 from tqdm import tqdm
 import types
 
 from megatron import get_retro_args, print_rank_0
 from megatron.data.indexed_dataset import make_dataset as make_indexed_dataset
-from megatron.tokenizer.tokenizer import (
-    _BertWordPieceTokenizer,
-    _GPT2BPETokenizer,
-)
 from tools.bert_embedding.utils import get_missing_blocks_by_rank
 from tools.retro.external_libs import h5py
 from tools.retro.utils import get_gpt_tokenizer, get_bert_tokenizer
@@ -29,7 +20,6 @@ from .utils import (
     get_individual_db_dir,
     get_individual_chunk_db,
     get_individual_doc_offsets,
-    get_merged_dataset,
     get_merged_db_path_map,
     save_indexed_dataset_infos,
 )
@@ -266,10 +256,10 @@ def build_individual_db(dataset_idx, n_datasets, dataset_info, tokenizers):
                 # Save DB.
                 print_rank_0(" > saving individual db.")
                 with h5py.File(db_path, "w") as f:
-                    dset = f.create_dataset("chunks_valid", data=chunk_db_valid)
-                    dset = f.create_dataset("chunks_invalid",
+                    f.create_dataset("chunks_valid", data=chunk_db_valid)
+                    f.create_dataset("chunks_invalid",
                                             data=chunk_db_invalid)
-                    dset = f.create_dataset("doc_offsets", data=doc_offsets)
+                    f.create_dataset("doc_offsets", data=doc_offsets)
 
             # Wait for all ranks to finish block.
             print_rank_0(" > waiting for all ranks to finish block.")
@@ -281,7 +271,7 @@ def build_individual_db(dataset_idx, n_datasets, dataset_info, tokenizers):
 def build_individual_dbs(indexed_dataset_infos):
     '''Iterate each indexed dataset & process its chunks.'''
 
-    args = get_retro_args()
+    get_retro_args()
 
     # Tokenizers.
     tokenizers = types.SimpleNamespace(

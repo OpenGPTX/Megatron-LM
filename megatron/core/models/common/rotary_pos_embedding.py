@@ -1,6 +1,5 @@
 # Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
 
-import importlib.util
 
 import torch
 from torch import einsum, nn

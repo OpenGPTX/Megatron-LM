@@ -29,7 +29,7 @@ class VitClassificationModel(MegatronModule):
             post_process=self.post_process,
             single_token_output=True
         )
-        
+
         if self.post_process:
             if not self.finetune:
                 self.head = VitMlpHead(self.hidden_size, self.num_classes)

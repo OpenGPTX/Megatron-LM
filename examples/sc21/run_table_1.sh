@@ -140,6 +140,3 @@ export JOB_NAME=results_table_1_model_size_${MODEL_SIZE}
 
 
 exit 0
-
-
-

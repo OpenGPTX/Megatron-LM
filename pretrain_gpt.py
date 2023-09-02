@@ -4,7 +4,6 @@
 
 import argparse
 from functools import partial
-from typing import List, Optional
 
 import torch
 
@@ -13,10 +12,8 @@ from megatron import print_rank_0
 from megatron import get_timers
 from megatron import get_tokenizer
 from megatron.core import tensor_parallel
-from megatron.core.enums import ModelType
 from megatron.data.gpt_dataset import build_train_valid_test_datasets
 from megatron.model import GPTModel
-from megatron.training import pretrain
 from megatron.utils import get_ltor_masks_and_position_ids
 from megatron.utils import average_losses_across_data_parallel_group
 from megatron.arguments import core_transformer_config_from_args
@@ -80,7 +77,7 @@ def loss_func(loss_mask, output_tensor):
 
 def forward_step(data_iterator, model):
     """Forward step."""
-    args = get_args()
+    get_args()
     timers = get_timers()
 
     # Get the batch.
@@ -121,14 +118,3 @@ def train_valid_test_datasets_provider(train_val_test_num_samples):
 def extra_args_provider(parser):
     parser.add_argument('--_is_gpt', default=True, help=argparse.SUPPRESS)
     return parser
-
-
-# @record
-# def main():
-#     pretrain(train_valid_test_datasets_provider,
-#              model_provider,
-#              ModelType.encoder_or_decoder,
-#              forward_step,
-#              extra_args_provider=extra_args_provider,
-#              args_defaults={'tokenizer_type': 'GPT2BPETokenizer'})
-    

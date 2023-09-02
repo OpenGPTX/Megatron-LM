@@ -8,7 +8,6 @@ import mpu
 from torch.nn.parameter import Parameter
 import torch.nn.init as init
 import torch
-import random
 import sys
 sys.path.append("../..")
 

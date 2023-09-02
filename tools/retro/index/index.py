@@ -1,7 +1,6 @@
 # Copyright (c) 2023, NVIDIA CORPORATION.  All rights reserved.
 
 import abc
-import numpy as np
 import os
 import torch
 

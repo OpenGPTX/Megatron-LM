@@ -60,4 +60,3 @@ class TestCoreAttention:
         assert context_layer.shape[2] == config.hidden_size
         assert context_layer.device.type == 'cuda'
         assert context_layer.dtype == torch.float32
-

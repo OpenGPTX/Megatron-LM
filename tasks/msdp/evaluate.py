@@ -40,6 +40,5 @@ def evaluate_f1(guess_file, answer_file):
 
 def main():
     args = get_args()
-    
-    evaluate_f1(args.guess_file, args.answer_file)
 
+    evaluate_f1(args.guess_file, args.answer_file)

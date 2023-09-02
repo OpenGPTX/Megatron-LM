@@ -10,7 +10,6 @@ import torch
 from torch.nn.parallel.distributed import DistributedDataParallel as torchDDP
 from torch._utils import _flatten_dense_tensors, _unflatten_dense_tensors
 
-from megatron import get_timers
 from megatron import print_rank_0
 from megatron.core import mpu, tensor_parallel
 from megatron.model import DistributedDataParallel as LocalDDP
@@ -262,7 +261,7 @@ class MegatronOptimizer(ABC):
                 args.sequence_parallel:
             grads = []
             for model_module in self.models:
-                unwrapped_model = unwrap_model( 
+                unwrapped_model = unwrap_model(
                     model_module, (torchDDP, LocalDDP, Float16Module))
                 for param in unwrapped_model.parameters():
                     if getattr(param, 'sequence_parallel', False):
@@ -586,7 +585,7 @@ class Float16OptimizerWithFloat16Params(MixedPrecisionOptimizer):
             for main_param in main_group:
                 if main_param.grad is not None:
                     main_grads.append(main_param.grad.data)
-        
+
         return main_grads
 
 

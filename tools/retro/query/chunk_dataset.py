@@ -1,6 +1,5 @@
 # Copyright (c) 2023, NVIDIA CORPORATION.  All rights reserved.
 
-import os
 import torch
 
 from megatron import get_retro_args, print_rank_0
@@ -13,7 +12,7 @@ from megatron.training import (
 from tools.retro.db.utils import get_indexed_dataset_infos
 from tools.retro.utils import get_num_chunks_per_sample
 
-from .utils import get_neighbor_dirname, get_query_workdir
+from .utils import get_neighbor_dirname
 
 
 class ChunkDataset(torch.utils.data.Dataset):

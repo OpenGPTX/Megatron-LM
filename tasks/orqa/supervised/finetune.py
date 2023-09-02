@@ -3,7 +3,6 @@
 """ORQA finetuning/evaluation."""
 
 from functools import partial
-import sys
 
 import math
 import torch
@@ -11,21 +10,19 @@ import torch.nn.functional as F
 
 from megatron import get_args, get_timers, get_tokenizer, print_rank_0
 from megatron.core import mpu
-from megatron.indexer import IndexBuilder
 from megatron.model.biencoder_model import biencoder_model_provider
 from megatron.utils import average_losses_across_data_parallel_group
 from pretrain_ict import get_group_world_size_rank
 from tasks.finetune_utils import finetune
 from tasks.orqa.supervised.eval_utils import accuracy_func_provider
 from tasks.orqa.supervised.eval_utils import process_batch, task_collate_fn
-from tasks.orqa.evaluate_utils import ORQAEvaluator
 
 # input_ is a 2D tensor
 def check_and_append_tensor_for_gather(group, rank, world_size, input_):
 
     # gather the size of the first dimension of the tensor from all ranks
     current_length = input_.size()[0]
-    first_dim = torch.tensor([[current_length]], 
+    first_dim = torch.tensor([[current_length]],
         device=torch.cuda.current_device())
     input_list = [torch.empty_like(first_dim) for _ in range(world_size)]
     input_list[rank].copy_(first_dim)
@@ -235,4 +232,3 @@ def main():
             args.task))
 
     orqa(Dataset)
-

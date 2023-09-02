@@ -3,7 +3,6 @@
 from functools import partial
 import numpy as np
 import os
-import time
 import torch
 from torch.utils.data import BatchSampler, DataLoader, SequentialSampler, Subset
 from torch.utils.data._utils.collate import default_collate
@@ -13,7 +12,6 @@ from megatron import get_args, get_tokenizer, print_rank_0
 from megatron import core
 from megatron.arguments import core_transformer_config_from_args
 from megatron.core.enums import ModelType
-from megatron.core.pipeline_parallel import get_forward_backward_func
 from megatron.model import BertModel
 from megatron.training import setup_model_and_optimizer
 
@@ -104,7 +102,7 @@ def collate_batch(samples):
     padding 'text' arrays with pad_id, and other arrays with 0.
     """
 
-    n_samples = len(samples)
+    len(samples)
     keys = list(samples[0].keys())
     tokenizer = get_tokenizer()
 

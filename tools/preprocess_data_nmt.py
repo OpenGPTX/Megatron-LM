@@ -3,7 +3,6 @@
 """Processing nmt data for finetuning."""
 
 import argparse
-import json
 import multiprocessing
 import os
 import sys
@@ -110,4 +109,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

@@ -130,7 +130,6 @@ def _load_checkpoint(queue, args):
             else:
                 pre_process = mpu.is_pipeline_first_stage()
                 post_process = mpu.is_pipeline_last_stage()
-                model_rank = 0
                 model_ = [model_provider(pre_process, post_process).to(dtype)]
             margs.consumed_train_samples = 0
             margs.consumed_valid_samples = 0

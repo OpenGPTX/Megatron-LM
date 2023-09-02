@@ -34,7 +34,7 @@ def post_language_model_processing(lm_output, labels, logit_weights,
             loss = tensor_parallel.vocab_parallel_cross_entropy(output, labels)
         else:
             loss = tensor_parallel.vocab_parallel_cross_entropy(output.float(), labels)
-        
+
         # [s b] => [b, s]
         loss = loss.transpose(0,1).contiguous()
         return loss
@@ -65,7 +65,7 @@ class GPTModel(MegatronModule):
             encoder_attn_mask_type=AttnMaskType.causal,
             pre_process=self.pre_process,
             post_process=self.post_process)
-        
+
         if not args.untie_embeddings_and_output_weights:
             self.initialize_word_embeddings()
 

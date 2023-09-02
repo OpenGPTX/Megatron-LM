@@ -102,7 +102,7 @@ def _build_infinite_size_dataloader(dataloader):
             iterator = dataloader.__iter__()
 
 
-def _build_train_valid_dataloaders(train_dataset, valid_dataset, 
+def _build_train_valid_dataloaders(train_dataset, valid_dataset,
     task_collate_fn=None):
     """Traing and validation dataloaders."""
     args = get_args()

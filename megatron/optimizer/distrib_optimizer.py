@@ -7,11 +7,8 @@ from apex.optimizers import FusedAdam as Adam
 import math
 import torch
 
-from megatron import get_args
-from megatron import get_timers
 from megatron import print_rank_0
 from megatron.core import mpu, tensor_parallel
-from megatron.model.module import param_is_not_shared
 
 from .optimizer import MixedPrecisionOptimizer, _zero_grad_group_helper
 
@@ -206,7 +203,7 @@ class DistributedOptimizer(MixedPrecisionOptimizer):
         groups.
         """
 
-        num_groups = len(param_groups)
+        len(param_groups)
 
         # Param group map.
         # World param group map.
@@ -534,10 +531,8 @@ class DistributedOptimizer(MixedPrecisionOptimizer):
 
                     # Allocate dummy tensors.
                     numel = len(param_range_map["gbuf_world"])
-                    init_shard = lambda : torch.empty(
-                        (numel,),
-                        dtype=torch.float32,
-                        device=torch.cuda.current_device())
+                    def init_shard():
+                        return torch.empty((numel,), dtype=torch.float32, device=torch.cuda.current_device())
 
                     state_dict_state.append((state_order, {
                         "exp_avg" : init_shard(),

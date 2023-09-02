@@ -47,7 +47,7 @@ class CustomDataLoader(DataLoader):
 
     def _collate_fn(self, batch_data):
         # generate batch
-        batch_size = len(batch_data)
+        len(batch_data)
         tensorized = OrderedDict()
         for d in batch_data:
             for k, v in d.items():

@@ -201,7 +201,6 @@ class BiEncoderModel(MegatronModule):
         try:
             state_dict = torch.load(checkpoint_name, map_location='cpu')
         except ModuleNotFoundError:
-            from megatron.fp16_deprecated import loss_scaler
             # For backward compatibility.
             print_rank_0(' > deserializing using the old code structure ...')
             sys.modules['fp16.loss_scaler'] = sys.modules[
@@ -286,7 +285,7 @@ class PretrainedBertModel(MegatronModule):
                                         extended_attention_mask,
                                         tokentype_ids=tokentype_ids)
         # This mask will be used in average-pooling and max-pooling
-        pool_mask = (input_ids == self.pad_id).unsqueeze(2)
+        (input_ids == self.pad_id).unsqueeze(2)
 
         # Taking the representation of the [CLS] token of BERT
         pooled_output = lm_output[0, :, :]

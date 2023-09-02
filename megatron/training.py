@@ -6,7 +6,6 @@ from datetime import datetime
 import math
 import sys
 import time
-from typing import List, Optional
 # The earliest we can measure the start time.
 _TRAIN_START_TIME = time.time()
 import torch
@@ -706,7 +705,7 @@ def training_log(loss_dict, total_loss_dict, learning_rate, iteration,
                                   tokens_per_sec_per_replica, iteration)
                 writer.add_scalar('iteration-time/TFLOPs per gpu (estimated)',
                                   tflops, iteration)
-                
+
         log_string = ' iteration {:8d}/{:8d} |'.format(
             iteration, args.train_iters)
         log_string += ' consumed samples: {:12d} |'.format(
@@ -939,7 +938,7 @@ def evaluate(forward_step_func,
                             key, torch.cuda.FloatTensor([0.0])) + loss_dict[key]
 
             args.consumed_valid_samples += eval_batch_size
-        
+
         collected_non_loss_data = None
         if process_non_loss_data_func is not None and is_last_rank():
             collected_non_loss_data = forward_backward_func(

@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright (c) 2023, NVIDIA CORPORATION.  All rights reserved.
 
 """Processing text modality data for MultiModal pretraining."""
@@ -9,7 +8,6 @@ import multiprocessing
 import os
 import sys
 import numpy as np
-from torchvision.transforms import ToTensor
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                              os.path.pardir)))
 import time
@@ -22,7 +20,6 @@ except ImportError:
     nltk_available = False
 
 from megatron.tokenizer import build_tokenizer
-from megatron.data import indexed_dataset
 from megatron.data.indexed_dataset import MMapIndexedDatasetBuilder
 
 
@@ -69,7 +66,7 @@ class Encoder(object):
             xs.extend([0 for _ in range(img_pad)])
             img_raw = np.frombuffer(xs, dtype=np.int32)
             img_raw = np.insert(img_raw, 0, img_pad)
-        
+
         return sentence_ids, img_raw, len(json_line)
 
 def get_args():
@@ -138,7 +135,7 @@ def main():
 
     print(f"Vocab size: {tokenizer.vocab_size}")
     print(f"Output prefix: {args.output_prefix}")
-    
+
     output_bin_files = "{}_mmdata.bin".format(args.output_prefix)
     output_idx_files = "{}_mmdata.idx".format(args.output_prefix)
 
@@ -149,7 +146,7 @@ def main():
     total_bytes_processed = 0
 
     print("Time to startup:", startup_end - startup_start)
-    
+
     for i, (sentence, img_raw, bytes_processed) in enumerate(encoded_docs, start=1):
         total_bytes_processed += bytes_processed
         builders.add_item(torch.IntTensor(sentence))
@@ -162,10 +159,9 @@ def main():
             print(f"Processed {i} documents",
                   f"({i/elapsed} docs/s, {mbs} MB/s).",
                   file=sys.stderr)
-    
+
     builders.finalize(output_idx_files)
 
 
 if __name__ == '__main__':
     main()
-

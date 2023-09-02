@@ -12,8 +12,6 @@ from megatron.model.language_model import get_language_model
 from megatron.model import LayerNorm, RMSNorm
 from megatron.model.utils import openai_gelu, erf_gelu
 from megatron.model.utils import get_linear_layer
-from megatron.model.utils import init_method_normal
-from megatron.model.utils import scaled_init_method_normal
 from .module import MegatronModule
 
 

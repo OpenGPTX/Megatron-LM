@@ -5,7 +5,6 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                              os.path.pardir)))
-import socket
 from megatron import get_args
 from megatron import print_rank_0
 from megatron.core import mpu
@@ -74,10 +73,10 @@ if __name__ == "__main__":
         if choice[0].item() == 0:
             try:
                 generate_and_post_process(model)
-            except ValueError as ve:
+            except ValueError:
                 pass
         elif choice[0].item() == 1:
             try:
                 beam_search_and_post_process(model)
-            except ValueError as ve:
+            except ValueError:
                 pass

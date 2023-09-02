@@ -284,4 +284,3 @@ class NQSupervisedDataset(OpenRetrievalAbstractDataset):
 
         print_rank_0(' >> processed {} samples.'.format(len(samples)))
         return samples
-

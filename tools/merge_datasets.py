@@ -1,6 +1,5 @@
 import os
 import sys
-import json
 import argparse
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                              os.path.pardir)))
@@ -63,4 +62,3 @@ if __name__ == '__main__':
            f'ERROR: {os.path.dirname(args.output_prefix)} is not a directory or does not exist'
 
     main(args)
-

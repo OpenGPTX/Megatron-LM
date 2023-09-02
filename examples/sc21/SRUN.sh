@@ -15,4 +15,3 @@ srun -l \
      --container-image "nvcr.io#nvidia/pytorch:20.12-py3" \
      --container-mounts "${THIS_DIR}:${THIS_DIR},${MEGATRON_CODE_DIR}:${MEGATRON_CODE_DIR},${DOCKER_MOUNT_DIR}:${DOCKER_MOUNT_DIR}" \
      --output=${THIS_DIR}/logs/%x_%j_$DATETIME.log sh -c "${CMD}"
-

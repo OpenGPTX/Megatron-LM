@@ -2,7 +2,6 @@
 
 
 import glob
-import sys
 import json
 import argparse
 
@@ -38,5 +37,3 @@ if __name__ == '__main__':
 
 
     print("Merged file", out_file, flush=True)
-
-

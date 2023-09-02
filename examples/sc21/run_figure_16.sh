@@ -38,6 +38,3 @@ export JOB_NAME=results_figure_16_microbatch_size_${MBS}_batch_size_${GBS}
 
 
 exit 0
-
-
-

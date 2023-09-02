@@ -38,7 +38,6 @@ class TestGPTModel:
         assert gpt_model.decoder.input_tensor.shape[2] == config.hidden_size
 
     def test_post_process_forward(self, gpt_model: GPTModel):
-        config: TransformerConfig = gpt_model.config
         sequence_length = gpt_model.max_sequence_length
         micro_batch_size = 2
 
@@ -66,4 +65,3 @@ class TestGPTModel:
 
     def test_load_state_dict(self, gpt_model: GPTModel):
         pass
-

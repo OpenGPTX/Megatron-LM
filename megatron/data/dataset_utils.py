@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright 2018 The Google AI Language Team Authors, and NVIDIA.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -584,7 +583,7 @@ def _build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
             assert indexed_dataset.doc_idx.shape[0] == \
                 (total_num_of_documents + 1)
         return dataset
-    
+
     train_dataset = build_split_dataset(0, 'train')
     valid_dataset = build_split_dataset(1, 'valid')
     test_dataset = build_split_dataset(2, 'test')

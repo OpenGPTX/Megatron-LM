@@ -50,4 +50,3 @@ if __name__ == "__main__":
     elif args.task == 'segment_segformer':
         from tasks.vision.segmentation.finetune_segformer import main
         main()
-

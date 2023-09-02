@@ -5,14 +5,11 @@
 import math
 import einops
 import torch
-import apex
 import torch.nn.functional as F
 from megatron import get_args
 from megatron.model.transformer import ParallelTransformer
 from megatron.model.utils import (
-    get_linear_layer,
     init_method_normal,
-    scaled_init_method_normal,
 )
 from megatron.model.module import MegatronModule
 
@@ -172,7 +169,7 @@ class VitBackbone(MegatronModule):
                 )
                 torch.nn.init.zeros_(self.cls_token)
             self.position_ids = torch.arange(self.seq_length).expand(1, -1).cuda()
-            
+
             # Linear encoder
             self.linear_encoder = torch.nn.Linear(
                 self.flatten_dim, self.hidden_size
@@ -242,4 +239,3 @@ class VitBackbone(MegatronModule):
                 hidden_states = hidden_states.transpose(0, 1).contiguous()
 
         return hidden_states
-

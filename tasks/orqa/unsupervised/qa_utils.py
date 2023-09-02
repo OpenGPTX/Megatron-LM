@@ -29,15 +29,15 @@ logger = logging.getLogger(__name__)
 QAMatchStats = collections.namedtuple('QAMatchStats', ['top_k_hits',\
                                         'questions_doc_hits'])
 
-def calculate_matches(all_docs: Dict[object, Tuple[str, str]], 
-    answers: List[List[str]], closest_docs: List[Tuple[List[object], 
+def calculate_matches(all_docs: Dict[object, Tuple[str, str]],
+    answers: List[List[str]], closest_docs: List[Tuple[List[object],
     List[float]]], workers_num: int, match_type: str) -> QAMatchStats:
     """
-    Evaluates answers presence in the set of documents. This function is 
-    supposed to be used with a large collection of documents and results. 
-    It internally forks multiple sub-processes for evaluation and then 
+    Evaluates answers presence in the set of documents. This function is
+    supposed to be used with a large collection of documents and results.
+    It internally forks multiple sub-processes for evaluation and then
     merges results
-    :param all_docs: dictionary of the entire documents database. 
+    :param all_docs: dictionary of the entire documents database.
         doc_id -> (doc_text, title)
     :param answers: list of answers's list. One list per question
     :param closest_docs: document ids of the top results along with their
@@ -111,7 +111,7 @@ def check_answer(questions_answers_docs, tokenizer, match_type) -> List[bool]:
 def has_answer(answers, text, tokenizer, match_type) -> bool:
     """
     Check if a document contains an answer string.
-    If `match_type` is string, token matching is done between the text 
+    If `match_type` is string, token matching is done between the text
         and answer.
     If `match_type` is regex, we search the whole text with the regex.
     """

@@ -2,7 +2,6 @@
 
 import argparse
 import json
-import os
 import time
 
 """
@@ -50,5 +49,5 @@ if __name__ == '__main__':
     # Close the file.
     f_input.close()
     f_output.close()
-    
+
     print('done :-)', flush=True)

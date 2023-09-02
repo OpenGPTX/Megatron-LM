@@ -8,7 +8,6 @@ import types
 
 from megatron.global_vars import set_global_variables, set_retro_args
 from megatron.initialize import (
-    initialize_megatron,
     _initialize_distributed,
     _set_random_seed,
     _compile_dependencies,
@@ -17,7 +16,6 @@ from tools.retro.db.utils import (
     get_indexed_dataset_infos as get_db_indexed_dataset_infos,
     get_merged_train_dataset as get_db_dataset,
 )
-from tools.retro.main import add_retro_args
 from tools.retro.query.retro_dataset import get_retro_datasets
 from tools.retro.utils import get_args_path, get_bert_tokenizer, get_gpt_tokenizer
 

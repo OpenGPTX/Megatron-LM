@@ -1,6 +1,6 @@
 # BSD 3-Clause License
 #
-# Copyright (c) Soumith Chintala 2016, 
+# Copyright (c) Soumith Chintala 2016,
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,7 +28,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# code taken from 
+# code taken from
 # https://github.com/pytorch/vision/blob/main/torchvision/datasets/folder.py
 # added support for classes_fraction and data_per_class_fraction
 
@@ -217,7 +217,7 @@ class DatasetFolder(VisionDataset):
                 path, target = self.samples[curr_index]
                 sample = self.loader(path)
                 break
-            except Exception as e:
+            except Exception:
                 curr_index = np.random.randint(0, self.total)
 
         if self.transform is not None:
@@ -299,4 +299,3 @@ class ImageFolder(DatasetFolder):
                                           data_per_class_fraction=data_per_class_fraction,
                                           is_valid_file=is_valid_file)
         self.imgs = self.samples
-

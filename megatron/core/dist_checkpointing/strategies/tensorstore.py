@@ -27,7 +27,7 @@ class TensorStoreLoadShardedStrategy(LoadShardedStrategy):
         if torch.distributed.get_rank() == 0:
             print(f'Loading distributed checkpoint with {self.__class__.__name__}')
             if self.load_directly_on_device:
-                print(f'Loading distributed checkpoint directly on the GPU')
+                print('Loading distributed checkpoint directly on the GPU')
         load_fn = partial(
             _load_from_array,
             checkpoint_dir=checkpoint_dir,

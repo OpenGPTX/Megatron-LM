@@ -6,7 +6,7 @@
 # WoI: https://parl.ai/projects/sea/
 
 DIR=`pwd`
-# Before running the preprocessing, please download 
+# Before running the preprocessing, please download
 # the wizard of wikipedia and wizard datasets
 WOW_DATA_FOLDER=<PATH_OF_WIZARD_OF_WIKIPEDIA_DATA_FOLDER>
 WOI_DATA_FOLDER=<PATH_OF_WIZARD_OF_INTERNET_DATA_FOLDER>
@@ -46,7 +46,7 @@ python ${DIR}/tasks/msdp/preprocessing.py \
 
 
 # Get the knowledge generation prompts for the each test dataset in WoW and WoI
-MODEL_FILE=<PATH_OF_THE_FINETUNED_DPR_MODEL> 
+MODEL_FILE=<PATH_OF_THE_FINETUNED_DPR_MODEL>
 # WoW test seen
 python ${DIR}/tasks/msdp/preprocessing.py \
         --func get_knwl_gen_prompts \
@@ -80,4 +80,3 @@ python ${DIR}/tasks/msdp/preprocessing.py \
         --func get_resp_gen_prompts \
         --train_file ${WOW_DATA_FOLDER}/train_processed.txt \
         --processed_file ${WOW_DATA_FOLDER}/output_response_prompts.txt
-

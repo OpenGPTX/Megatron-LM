@@ -630,7 +630,7 @@ class SwinTransformer(nn.Module):
     def forward_selfattention(self, x, n=1):
         # n=1 return the last layer attn map; otherwise return attn maps in all layers
 
-        
+
         x = self.patch_embed(x)
         if self.ape:
             x = x + self.absolute_pos_embed
@@ -682,7 +682,6 @@ class SwinTransformer(nn.Module):
         # we will return the averaged token features from the `n` last blocks
         # note: there is no [CLS] token in Swin Transformer
         output = []
-        s = 0
         for i, layer in enumerate(self.layers):
             x, fea = layer.forward_with_features(x)
 
@@ -692,8 +691,8 @@ class SwinTransformer(nn.Module):
                     if i == len(self.layers)-1: # use the norm in the last stage
                         x_ = self.norm(x_)
 
-                    x_avg = torch.flatten(self.avgpool(x_.transpose(1, 2)), 1)  # B C     
-                    # print(f'Stage {i},  x_avg {x_avg.shape}')          
+                    x_avg = torch.flatten(self.avgpool(x_.transpose(1, 2)), 1)  # B C
+                    # print(f'Stage {i},  x_avg {x_avg.shape}')
                     output.append(x_avg)
 
                 start_blk = 0
@@ -726,7 +725,7 @@ class SwinTransformer(nn.Module):
             for k, v in pretrained_dict.items():
                 need_init = (
                         k.split('.')[0] in pretrained_layers
-                        or pretrained_layers[0] is '*'
+                        or pretrained_layers[0] == '*'
                         or 'relative_position_index' not in k
                         or 'attn_mask' not in k
                 )
@@ -785,7 +784,7 @@ class SwinTransformer(nn.Module):
             if (
                     name.split('.')[0] in frozen_layers
                     or '.'.join(name.split('.')[0:2]) in frozen_layers
-                    or (len(frozen_layers) > 0 and frozen_layers[0] is '*')
+                    or (len(frozen_layers) > 0 and frozen_layers[0] == '*')
             ):
                 for _name, param in module.named_parameters():
                     param.requires_grad = False
@@ -796,7 +795,7 @@ class SwinTransformer(nn.Module):
         for name, param in self.named_parameters():
             if (
                     name.split('.')[0] in frozen_layers
-                    or (len(frozen_layers) > 0 and frozen_layers[0] is '*')
+                    or (len(frozen_layers) > 0 and frozen_layers[0] == '*')
                     and param.requires_grad is True
             ):
                 param.requires_grad = False
@@ -846,4 +845,3 @@ def get_swin(is_teacher=False):
     )
 
     return swin
-

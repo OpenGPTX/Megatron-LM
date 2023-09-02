@@ -120,14 +120,14 @@ def generate(model,
     # Note that these tensors are broadcaseted to all ranks.
     if torch.distributed.get_rank() == 0:
         assert prompts is not None
-    
+
     context_tokens_tensor, context_length_tensor = tokenize_prompts(
         prompts=prompts, tokens_to_generate=tokens_to_generate, add_BOS=add_BOS)
 
     if tokens_to_generate == 0:
         return score_and_return_on_first_stage(
             model, context_tokens_tensor, context_length_tensor)
-    
+
     # Main inference function.
     # Note that the outputs are available on the first stage.
     return generate_tokens_probs_and_return_on_first_stage(
@@ -167,7 +167,7 @@ def beam_search_and_post_process(model,
                                  prevent_newline_after_colon=prevent_newline_after_colon)
     # Only post-process on first stage.
     if mpu.is_pipeline_first_stage():
-        lengths = tokens.size(1)*torch.ones(beam_size, dtype=torch.int64, device=torch.cuda.current_device()) 
+        lengths = tokens.size(1)*torch.ones(beam_size, dtype=torch.int64, device=torch.cuda.current_device())
         tokens, prompts_plus_generations, prompts_plus_generations_segments = detokenize_generations(tokens, lengths, True)
         scores = scores.cpu().numpy().tolist()
         return prompts_plus_generations, prompts_plus_generations_segments, scores
@@ -194,7 +194,7 @@ def beam_search(model, prompts=None, tokens_to_generate=0, beam_size=0, add_BOS=
 
     context_tokens_tensor, context_length_tensor = tokenize_prompts(
         prompts=prompts, tokens_to_generate=tokens_to_generate, add_BOS=add_BOS)
-    
-    return beam_search_and_return_on_first_stage(model, context_tokens_tensor, context_length_tensor, 
+
+    return beam_search_and_return_on_first_stage(model, context_tokens_tensor, context_length_tensor,
             beam_size, stop_token=stop_token, num_return_gen=num_return_gen, length_penalty=length_penalty,
             prevent_newline_after_colon=prevent_newline_after_colon)

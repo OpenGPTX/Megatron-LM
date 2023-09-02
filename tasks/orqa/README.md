@@ -33,4 +33,3 @@ More details on the retriever are available in [our paper](https://arxiv.org/abs
 ## Reader Training
 
 The reader component will be available soon.
-

@@ -18,7 +18,6 @@ def test_set_cuda_rng_state(tensor_model_parallel_size):
     tensor_model_parallel_size = mpu.get_tensor_model_parallel_world_size()
 
     size = 123
-    seed = 1234
     torch.cuda.manual_seed(1234)
     tensor = torch.cuda.FloatTensor(size)
 

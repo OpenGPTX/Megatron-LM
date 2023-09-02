@@ -6,10 +6,9 @@ import shutil
 import torch
 from tqdm import tqdm
 
-from megatron import get_retro_args, print_rank_0
+from megatron import get_retro_args
 from tools.bert_embedding import DiskDataParallelBertEmbedder
 from tools.retro.db.utils import (
-    get_indexed_dataset_infos,
     get_merged_sampled_dataset,
     get_merged_train_dataset,
 )

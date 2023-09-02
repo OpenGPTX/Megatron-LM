@@ -10,7 +10,6 @@ Program arguments have the details.
 
 import argparse
 from functools import partial
-import glob
 import ftfy
 import json
 from langdetect import detect
@@ -85,7 +84,7 @@ def process_doc(json_line, args):
 def process_set(args, input_file, output_f_cleaned, output_f_filtered):
 
     print(' > working on {} ...'.format(input_file), flush=True)
-    
+
     num_docs = num_remove_512 = num_remove_java = num_remove_512_non_english \
         = num_ftfy_fix_text = num_general_cleaning = 0
 

@@ -41,6 +41,3 @@ export JOB_NAME=results_figure_13_pipeline_parallel_size_${PP}_tensor_parallel_s
 
 
 exit 0
-
-
-

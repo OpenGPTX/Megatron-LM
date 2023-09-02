@@ -1,10 +1,7 @@
 # Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
-import os
 import random
-import numpy as np
 import torch
 import torchvision.transforms as T
-from torchvision import datasets
 from megatron import get_args
 from megatron.data.image_folder import ImageFolder
 from megatron.data.autoaugment import ImageNetPolicy
@@ -88,7 +85,7 @@ class InpaintingTransform():
         self.train = train
         assert args.fp16 or args.bf16
         self.data_type = torch.half if args.fp16 else torch.bfloat16
-     
+
         if self.train:
             self.transform = T.Compose([
                 T.RandomResizedCrop(self.image_size),
@@ -139,7 +136,7 @@ class InpaintingTransform():
 
     def __call__(self, input):
         trans_input = self.transform(input)
-        mask = self.gen_mask(self.image_size, self.mask_size, 
+        mask = self.gen_mask(self.image_size, self.mask_size,
 			     self.mask_type, self.patch_size)
         mask = mask.unsqueeze(dim=0)
         return trans_input, mask

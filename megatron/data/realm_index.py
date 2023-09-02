@@ -1,10 +1,8 @@
-import itertools
 import os
 import pickle
 import shutil
 
 import numpy as np
-import torch
 
 from megatron import get_args
 from megatron.core import mpu

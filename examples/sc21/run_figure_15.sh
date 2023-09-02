@@ -42,6 +42,3 @@ export JOB_NAME=results_figure_15_tensor_parallel_size_${TP}_data_parallel_size_
 
 
 exit 0
-
-
-

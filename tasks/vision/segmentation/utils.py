@@ -1,6 +1,5 @@
 import math
 import torch
-import numpy as np
 from megatron import get_args
 
 def slidingcrops(img, mask):
@@ -82,4 +81,3 @@ def slidingjoins(preds, probs, labels, slices_info, img_size):
         total_labels[:, sy:sy + sub_h, sx:sx + sub_w] = labels_split[i][0, :sub_h, :sub_w]
 
     return total_preds, total_labels
-

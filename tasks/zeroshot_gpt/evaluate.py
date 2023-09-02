@@ -120,7 +120,7 @@ def evaluate(data_loader, model, eval_metric):
     """Evaluation."""
     args = get_args()
     config = core_transformer_config_from_args(args)
-    
+
     # Turn on evaluation mode which disables dropout.
     model.eval()
 

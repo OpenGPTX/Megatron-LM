@@ -8,7 +8,6 @@ from mpu.cross_entropy import vocab_parallel_cross_entropy
 import mpu
 import torch.nn.functional as F
 import torch
-import random
 import sys
 sys.path.append("../..")
 

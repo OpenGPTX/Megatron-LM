@@ -43,4 +43,3 @@ class TestParallelMLP:
         assert output.dtype == torch.float32
         assert output.device.type == 'cuda'
         assert output_bias.device.type == 'cuda'
-

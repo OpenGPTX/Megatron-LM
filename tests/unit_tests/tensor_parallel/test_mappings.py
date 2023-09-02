@@ -64,7 +64,7 @@ def test_GatherFromModelParallelRegion():
     assert(torch.equal(actual_output_data, expected_output))
     assert(torch.equal(mappings._GatherFromModelParallelRegion.symbolic(None, input_data), expected_output))
     Utils.destroy_model_parallel()
- 
+
 def test_ScatterToSequenceParallelRegion():
     Utils.initialize_model_parallel(4,2)
     input_data = torch.rand((8,4)).cuda()
@@ -132,4 +132,3 @@ def test_ReduceScatterToSequenceParallelRegion():
         expected_output = expected_output + 4
     assert(torch.equal(output_data, expected_output))
     Utils.destroy_model_parallel()
-

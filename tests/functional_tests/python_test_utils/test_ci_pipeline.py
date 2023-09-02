@@ -1,7 +1,6 @@
 import os
 import json
 import pytest
-import sys
 import glob
 from tensorboard.backend.event_processing import event_accumulator
 
@@ -78,10 +77,10 @@ class TestCIPipeline:
     def test_num_zeros_deterministic(self):
         # Expected validation loss curve at different global steps.
         self._test_helper("num-zeros", TypeOfTest.DETERMINISTIC)
-    
+
     def iteration_timing_node(self):
         expected_iteration_timing_avg = self.expected["train_step_timing_avg"]
         iteration_time = read_tb_logs_as_list(LOGS_DIR, "iteration-time")
-        idx = len(iteration_time)//3   
+        idx = len(iteration_time)//3
         iteration_time_avg = sum(iteration_time[idx:])/len(iteration_time[idx:])
         assert expected_iteration_timing_avg == pytest.approx(expected=iteration_time_avg, rel=self.margin_time), f"The time per global step must be approximately {expected_iteration_timing_avg} but it is {iteration_time_avg}."

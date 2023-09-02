@@ -2,14 +2,12 @@
 
 import argparse
 from functools import partial
-import itertools
 import json
 from lsh import cache, minhash
 import multiprocessing
 import numpy as np
 import time
 import pickle
-import sys
 import os
 
 # This function is adapted from:
@@ -289,4 +287,3 @@ if __name__ == '__main__':
             find_pair_urls_sequential(args, lshcache, url_doc)
 
     print('done :-)')
- 

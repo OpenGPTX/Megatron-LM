@@ -3,7 +3,6 @@
 """Megatron initialization."""
 
 import random
-import os
 import time
 
 import numpy as np

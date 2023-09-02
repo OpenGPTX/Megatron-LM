@@ -23,4 +23,3 @@ class DynamicLossScaler:
         self.delayed_shift = delayed_shift
         self.cur_hysteresis = delayed_shift
         self.consecutive_hysteresis = consecutive_hysteresis
-

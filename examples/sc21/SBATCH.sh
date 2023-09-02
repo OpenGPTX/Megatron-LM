@@ -8,6 +8,3 @@ sbatch -p ${SLURM_PARTITION} \
        --export=MEGATRON_CODE_DIR,MEGATRON_PARAMS,DOCKER_MOUNT_DIR SRUN.sh
 
 exit 0
-
-
-

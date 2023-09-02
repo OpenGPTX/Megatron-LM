@@ -1,21 +1,20 @@
 # Copyright (c) 2022-2023, NVIDIA CORPORATION.  All rights reserved.
 
 """ 2-stage checkpoint loading. """
-import os
 import time
 from collections import defaultdict
 from dataclasses import dataclass
 from functools import partial, wraps
 from itertools import chain
-from logging import DEBUG, INFO, StreamHandler, getLogger
+from logging import getLogger
 from operator import attrgetter, itemgetter
 from pathlib import Path
-from typing import Iterable, List, NamedTuple, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import torch
 
 from ..dict_utils import dict_list_map_inplace, map_reduce, nested_values
-from ..mapping import ShardedStateDict, ShardedTensor, StateDict
+from ..mapping import ShardedStateDict, ShardedTensor
 from .base import LoadShardedStrategy
 from .tensorstore import _load_from_array
 from .zarr import flatten_range

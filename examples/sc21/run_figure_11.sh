@@ -41,6 +41,3 @@ export JOB_NAME=results_figure_11_pipeline_parallel_size_${PP}_batch_size_${GBS}
 
 
 exit 0
-
-
-

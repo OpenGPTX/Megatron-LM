@@ -214,7 +214,7 @@ class SwinTransformerBlock(nn.Module):
         self.H = input_resolution[0]
         self.W = input_resolution[1]
 
-        self.attn_mask_dict = {} 
+        self.attn_mask_dict = {}
 
     def create_attn_mask(self, H, W):
         # calculate attention mask for SW-MSA
@@ -510,7 +510,7 @@ class SwinTransformer(nn.Module):
         self.img_size = to_2tuple(img_size)
         self.patch_size = to_2tuple(patch_size)
         self.output_avg = output_avg
-        
+
         # split image into non-overlapping patches
         self.patch_embed = PatchEmbed(
             img_size=img_size, patch_size=patch_size, in_chans=in_chans, embed_dim=embed_dim,
@@ -622,4 +622,3 @@ def get_swin(drop_path_rate=0.3, output_avg=False):
     )
 
     return swin
-

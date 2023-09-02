@@ -8,7 +8,6 @@ import argparse
 import os
 import sys
 
-import torch
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(script_dir, "../../../"))
@@ -42,7 +41,7 @@ def test_indexed_dataset(args):
 
 def test_indexed_dataset_get(args):
     ds = indexed_dataset.make_dataset(args.data, args.dataset_impl)
-    tokenizer = build_tokenizer(args)
+    build_tokenizer(args)
     size = ds.sizes[0]
     print(f"size: {size}")
     full = ds.get(0)

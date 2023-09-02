@@ -7,7 +7,6 @@ import math
 import torch
 from torch._utils import _flatten_dense_tensors, _unflatten_dense_tensors
 
-from megatron import get_args
 from megatron.core import mpu
 from .module import MegatronModule
 

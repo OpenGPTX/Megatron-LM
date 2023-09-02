@@ -7,7 +7,6 @@ import numpy as np
 import time
 import torch
 import torch.nn.functional as F
-from torch.utils.data import DataLoader
 
 from megatron import get_args, print_rank_0
 from megatron.core import mpu
@@ -16,7 +15,7 @@ from tasks.finetune_utils import build_data_loader
 
 def task_collate_fn(batch_data):
     # generate batch
-    batch_size = len(batch_data)
+    len(batch_data)
     tensorized = OrderedDict()
     for d in batch_data:
         for k, v in d.items():
@@ -104,7 +103,6 @@ def accuracy_func_provider(single_dataset_provider, rank0sampler=False):
 
         if output_predictions:
             assert rank0sampler
-            names = 'predictions'
         name, dataloader = dataloaders
         if args.task == "RET-FINETUNE-NQ":
             start_time = time.time()

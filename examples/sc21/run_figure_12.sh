@@ -49,6 +49,3 @@ export JOB_NAME=results_figure_12_interleaved_${INTERLEAVED}_batch_size_${GBS}
 
 
 exit 0
-
-
-

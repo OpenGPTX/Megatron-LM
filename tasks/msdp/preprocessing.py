@@ -51,16 +51,16 @@ def process_wow_dataset(raw_file, processed_file, knwl_ref_file, resp_ref_file):
     print("> Loading data from %s" % raw_file)
     with open(raw_file, "r") as fr:
         dialog_data = json.load(fr)
-    
+
     print("> Processing data ...")
     fproc = open(processed_file, "w")
     fknwl = open(knwl_ref_file, "w") if knwl_ref_file else None
     fresp = open(resp_ref_file, "w") if resp_ref_file else None
-    
+
     for i, sample in enumerate(tqdm(dialog_data)):
         # get all the dialog data for a single dialog sample
         dialog = sample["dialog"]
-        
+
         turn_list = []  # collect the dialog history
         # processing for each single dialog sample
         for j, turn in enumerate(dialog):
@@ -68,7 +68,7 @@ def process_wow_dataset(raw_file, processed_file, knwl_ref_file, resp_ref_file):
             text = turn["text"]
             if not (text.endswith("?") or text.endswith(".") or text.endswith("!")):
                 text = text + "."
-            
+
             if j == 0:
                 # first turn
                 turn_list.append(text)
@@ -78,7 +78,7 @@ def process_wow_dataset(raw_file, processed_file, knwl_ref_file, resp_ref_file):
             if "wizard" in speaker:
                 checked_sentence = list(turn["checked_sentence"].values())  # knowledge
                 checked_passage = list(turn["checked_passage"].values())    # topic
-                
+
                 assert len(checked_sentence) <= 1
 
                 # get the ground truth knowledge
@@ -97,7 +97,7 @@ def process_wow_dataset(raw_file, processed_file, knwl_ref_file, resp_ref_file):
                     topic = checked_passage
                 else:
                     topic = sample["chosen_topic"]
-                
+
                 dialog_context = " [SEP] ".join(turn_list)
                 knowledge = checked_sentence
                 response = text
@@ -107,7 +107,7 @@ def process_wow_dataset(raw_file, processed_file, knwl_ref_file, resp_ref_file):
                 # write to the output files
                 fproc.write(topic + "\t" + dialog_context + "\t" + \
                                 knowledge + "\t" + response + "\n")
-                
+
                 if fknwl:
                     fknwl.write(knowledge + "\n")
                 if fresp:
@@ -132,12 +132,12 @@ def process_woi_dataset(raw_file, processed_file, knwl_ref_file, resp_ref_file):
       Expected processed format:
       topic \t dialogue context \t golden knowledge \t golden response
     """
-    
+
     print("> Processing %s" % raw_file)
     fproc = open(processed_file, "w")
     fknwl = open(knwl_ref_file, "w") if knwl_ref_file else None
     fresp = open(resp_ref_file, "w") if resp_ref_file else None
-    
+
     with open(raw_file, "r") as fr:
         for i, line in tqdm(enumerate(fr)):
             # read line by line, each line uses json format
@@ -148,11 +148,11 @@ def process_woi_dataset(raw_file, processed_file, knwl_ref_file, resp_ref_file):
             # its key is the data id, and its value contains all the data content
             item_dict = item_dict.values()
             item_dict = list(item_dict)[0]  # len(item_dict) == 1
-            
+
             # get the whole dialog data for a single dialog sample
             dialog_data = item_dict['dialog_history']
             length = len(dialog_data)
-            
+
             turn_list = []  # collect the dialog history
             search_text = ""
             for i in range(length):
@@ -175,7 +175,7 @@ def process_woi_dataset(raw_file, processed_file, knwl_ref_file, resp_ref_file):
                     flag = selects[0][0]
                     selects = selects[1:]
                     assert len(selects) == len(contents)
-                    
+
                     # get the topic
                     if flag:
                         # no knowledge sentence is used for the response
@@ -199,7 +199,7 @@ def process_woi_dataset(raw_file, processed_file, knwl_ref_file, resp_ref_file):
                         topic = "no_topic"
                         knwl_sent = "no_passages_used"
 
-                    # get dialogue context, knowledge, and response 
+                    # get dialogue context, knowledge, and response
                     dialog_context = " [SEP] ".join(turn_list)
                     response = item['text']
 
@@ -212,7 +212,7 @@ def process_woi_dataset(raw_file, processed_file, knwl_ref_file, resp_ref_file):
                                 "").replace("\t", "")
                     response = response.replace("\n", "").replace("\r", \
                                 "").replace("\t", "")
-                    
+
                     if topic != "no_topic":
                         # write to the ouput files
                         fproc.write(topic + "\t" + dialog_context + "\t" + \
@@ -268,7 +268,7 @@ def get_database(test_datapath, train_datapath, data_type):
             topic = splits[0]
             turns = splits[1].split(" [SEP] ")[-3:]
             knowledge = splits[2]
-            response = splits[3]
+            splits[3]
             # filtering data samples
             if knowledge == "no_passages_used":
                 # when no knowledge is used
@@ -283,7 +283,7 @@ def get_database(test_datapath, train_datapath, data_type):
             # get the instance
             last_turn = turns[-1]
             instance = "( " + last_turn + " ) " + topic + " => " + knowledge
-            
+
             # construct dialog example
             dialog_example = ""
             if data_type != "wow_seen":
@@ -292,19 +292,19 @@ def get_database(test_datapath, train_datapath, data_type):
                 if i != 0:
                     dialog_example += " "
                 dialog_example += turn
-            
+
             # check overlaps
             if topic in test_topics:
                 if topic not in train_data_by_topic:
                     train_data_by_topic[topic] = [instance]
                 else:
                     train_data_by_topic[topic].append(instance)
-                
+
                 if topic not in dialog_data_by_topic:
                     dialog_data_by_topic[topic] = [dialog_example]
                 else:
                     dialog_data_by_topic[topic].append(dialog_example)
-            
+
             else:
                 # filtering data samples
                 if len(knowledge.split()) > 20:
@@ -313,7 +313,7 @@ def get_database(test_datapath, train_datapath, data_type):
                 if knowledge.startswith("It") or knowledge.startswith("it") or \
                    knowledge.startswith("This") or knowledge.startswith("this"):
                     continue
-                
+
             # append all the data into dialogue examples list
             dialog_examples.append((topic, dialog_example, instance))
 
@@ -331,7 +331,7 @@ def select_prompts_based_on_similarity(
         query_ids = torch.LongTensor([query_ids]).cuda()
         query_emb = encoder(input_ids=query_ids).pooler_output
         query_emb = query_emb[0]
-        
+
         # calculate embeddings for the samples in the database
         if topic in emb_dict:
             example_embeddings = emb_dict[topic]
@@ -351,7 +351,7 @@ def select_prompts_based_on_similarity(
         # compare the similarity and select the topk samples
         similarity_list = example_embeddings.matmul(query_emb)
         _, indices = torch.topk(similarity_list, k=topk)
-    
+
     indices = indices.tolist()
     indices = indices[::-1] # reverse the order
     selected_prompts = []
@@ -370,7 +370,7 @@ def prompt_selection_for_knowledge_generation(
 
     train_data_by_topic, dialog_data_by_topic, dialog_examples = \
                             get_database(test_datapath, train_datapath, data_type)
-    
+
     from transformers import DPRQuestionEncoderTokenizer
     print("> loading tokenizer and encoder")
     tokenizer = DPRQuestionEncoderTokenizer.from_pretrained(
@@ -432,7 +432,7 @@ def prompt_selection_for_knowledge_generation(
                         num_prompt += 1
                         if num_prompt == 10:
                             break
-                
+
                 # get the selected samples
                 example_list = selected_prompts[::-1]
                 key = topic + " " + turns[-1]
@@ -441,15 +441,15 @@ def prompt_selection_for_knowledge_generation(
             else:
                 num_data_sample = min(len(train_data_by_topic[topic]), 10)
                 total_example_list = train_data_by_topic[topic]
-                
+
                 dialog_list = dialog_data_by_topic[topic]
                 assert len(dialog_list) == len(train_data_by_topic[topic])
 
                 # calculate the similarity
                 example_list = select_prompts_based_on_similarity(
-                                query_sent, dialog_list, total_example_list, 
+                                query_sent, dialog_list, total_example_list,
                                 topic, tokenizer, encoder, topk=num_data_sample)
-                
+
                 key = topic + " " + turns[-1]
                 prompt_list_for_each_sample.append({key: example_list})
 
@@ -501,13 +501,13 @@ def prompt_selection_for_response_generation(input_path, output_path, seed):
                     accumulator = 0
             if accumulator >= 10:
                 num_overlap_token += accumulator
-            
+
             # filtering the data based on the ratio
             if num_overlap_token > response_len * 0.9 or num_overlap_token < response_len * 0.6:
                 continue
             if num_overlap_token < knowledge_len * 0.8:
                 continue
-            
+
             last_turn = " ".join(word_tokenize(turns[-1]))
             knowledge = " ".join(word_tokenize(knowledge))
             response = " ".join(word_tokenize(response))
@@ -517,12 +517,12 @@ def prompt_selection_for_response_generation(input_path, output_path, seed):
             prompt_example += "User says: " + last_turn + " "
             prompt_example += "We know that: " + knowledge + " "
             prompt_example += "System replies: " + response
-            
+
             prompt_example_list.append(prompt_example)
-        
+
     # shuffle the prompt examples
     np.random.shuffle(prompt_example_list)
-    
+
     print("> writing to %s" % output_path)
     with open(output_path, "w") as f:
         # f.write("Generate the System's response based on the knowledge sentence:\n")
@@ -538,7 +538,7 @@ def prepare_input_for_response_generation(test_file, knwl_gen_file, processed_fi
     # get the knowledge list
     with open(knwl_gen_file, "r") as f:
         knowledge_list = f.readlines()
-    
+
     print("> Processing ...")
     with open(test_file, "r") as fr:
         with open(processed_file, "w") as fw:
@@ -570,9 +570,9 @@ if __name__ == "__main__":
 
     elif args.func == "get_knwl_gen_prompts":
         prompt_selection_for_knowledge_generation(
-            args.test_file, args.train_file, args.model_file, 
+            args.test_file, args.train_file, args.model_file,
             args.processed_file, args.data_type)
-    
+
     elif args.func == "get_resp_gen_prompts":
         prompt_selection_for_response_generation(
             args.train_file, args.processed_file, args.seed)

@@ -3,14 +3,12 @@
 # Parts of the code here are adapted from PyTorch
 # repo: https://github.com/pytorch/pytorch
 
-import math
 import os
 import warnings
 from typing import Callable, Optional
 
 import torch
 import torch.nn.functional as F
-import torch.nn.init as init
 from torch.cuda.amp import custom_bwd, custom_fwd
 from torch.nn.parameter import Parameter
 
@@ -24,14 +22,13 @@ from megatron.core.parallel_state import (
 
 from .mappings import (
     copy_to_tensor_model_parallel_region,
-    gather_from_sequence_parallel_region,
     gather_from_tensor_model_parallel_region,
     reduce_from_tensor_model_parallel_region,
     reduce_scatter_to_sequence_parallel_region,
     scatter_to_tensor_model_parallel_region,
 )
 from .random import get_cuda_rng_tracker
-from .utils import VocabUtility, divide, split_tensor_along_last_dim
+from .utils import VocabUtility, divide
 
 _grad_accum_fusion_available = True
 try:

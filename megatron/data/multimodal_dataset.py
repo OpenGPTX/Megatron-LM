@@ -1,6 +1,6 @@
 # Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
 
-from PIL import Image, UnidentifiedImageError
+from PIL import Image
 import numpy as np
 import io
 import torch
@@ -11,7 +11,7 @@ try:
 except ImportError:
     BICUBIC = Image.BICUBIC
 
-from torchvision.transforms import Compose, ToTensor, Normalize, ToPILImage, RandomResizedCrop, Resize
+from torchvision.transforms import Compose, ToTensor, Normalize, ToPILImage, RandomResizedCrop
 
 def _convert_image_to_rgb(image):
     return image.convert("RGB")

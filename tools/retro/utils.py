@@ -2,7 +2,6 @@
 
 import os
 import torch
-import types
 
 from megatron import get_retro_args
 from megatron.tokenizer.tokenizer import (

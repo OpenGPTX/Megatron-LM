@@ -35,7 +35,7 @@ def process_files(args):
 
 def get_threshold(all_predictions, all_labels, one_threshold=False):
     if one_threshold:
-        all_predictons = {'combined': np.concatenate(list(all_predictions.values()))}
+        {'combined': np.concatenate(list(all_predictions.values()))}
         all_labels = {'combined': np.concatenate(list(all_predictions.labels()))}
     out_thresh = []
     for dataset in all_predictions:

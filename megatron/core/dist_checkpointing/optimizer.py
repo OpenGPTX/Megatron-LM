@@ -5,8 +5,7 @@
 import logging
 from copy import deepcopy
 from dataclasses import replace
-from itertools import chain
-from typing import Dict, Iterable, List
+from typing import Dict, Iterable
 
 logger = logging.getLogger(__name__)
 

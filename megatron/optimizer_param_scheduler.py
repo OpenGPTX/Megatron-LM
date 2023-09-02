@@ -173,7 +173,7 @@ class OptimizerParamScheduler(object):
             max_lr_ = sd['max_lr']
         self.max_lr = self._check_and_set(self.max_lr, max_lr_,
                                           'learning rate')
-        
+
         self.min_lr = self._check_and_set(self.min_lr, sd['min_lr'],
                                           'minimum learning rate')
 
@@ -224,11 +224,3 @@ class OptimizerParamScheduler(object):
             self.wd_incr_style = self._check_and_set(self.wd_incr_style,
                                                 sd['wd_incr_style'],
                                                 "weight decay incr style")
-            
-
-
-
-
-
-
-

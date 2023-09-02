@@ -1,7 +1,6 @@
 import pytest
 import os
 import torch
-from pathlib import Path
 
 from megatron.training import pretrain
 from pretrain_gpt import extra_args_provider, forward_step, model_provider, train_valid_test_datasets_provider
@@ -120,4 +119,4 @@ if __name__ == "__main__":
        run_test_training_debug_distributed,
        world_size=2,
        master_port=find_free_port()
-    )  
+    )

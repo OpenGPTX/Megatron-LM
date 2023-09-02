@@ -27,7 +27,7 @@ def get_open_retrieval_wiki_dataset():
 
 def get_open_retrieval_batch(data_iterator):
     # Items and their type.
-    keys = ['row_id', 'context', 'context_mask', 'context_types', 
+    keys = ['row_id', 'context', 'context_mask', 'context_types',
         'context_pad_mask']
     datatype = torch.int64
 
@@ -58,7 +58,7 @@ def build_tokens_types_paddings_from_text(row, tokenizer, max_seq_length):
     extended_context_ids = title_ids + [tokenizer.sep_id] + context_ids
 
     context_ids, context_types, context_pad_mask = \
-        build_tokens_types_paddings_from_ids(extended_context_ids, 
+        build_tokens_types_paddings_from_ids(extended_context_ids,
             max_seq_length, tokenizer.cls, tokenizer.sep, tokenizer.pad)
 
     return context_ids, context_types, context_pad_mask
@@ -151,7 +151,7 @@ class OpenRetrievalEvidenceDataset(ABC, Dataset):
         row = self.samples[idx]
 
         context_ids, context_types, context_pad_mask = \
-            build_tokens_types_paddings_from_text(row, self.tokenizer, 
+            build_tokens_types_paddings_from_text(row, self.tokenizer,
                 self.max_seq_length)
 
         sample = build_sample(row['doc_id'],

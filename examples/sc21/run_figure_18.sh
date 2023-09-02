@@ -49,6 +49,3 @@ export JOB_NAME=results_figure_18_scatter_gather_${SCATTER_GATHER}_batch_size_${
 
 
 exit 0
-
-
-

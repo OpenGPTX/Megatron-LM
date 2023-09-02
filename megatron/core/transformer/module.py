@@ -6,7 +6,7 @@ import torch
 from torch.autograd import Variable
 from torch.nn.parameter import Parameter
 
-from megatron.core import parallel_state, tensor_parallel
+from megatron.core import parallel_state
 from megatron.core.transformer.transformer_config import TransformerConfig
 
 _FLOAT_TYPES = (torch.FloatTensor, torch.cuda.FloatTensor)

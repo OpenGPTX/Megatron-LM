@@ -80,7 +80,7 @@ class RampupBatchsizeNumMicroBatches(NumMicroBatchesCalculator):
     def __init__(self, start_batch_size, batch_size_increment, ramup_samples,
                  global_batch_size, micro_batch_size, data_parallel_size):
         """Batch size ramp up.
-        Over 
+        Over
           steps = (global-batch-size - start-batch-size) / batch_size_increment
         increment batch size from start-batch-size to global-batch-size using
           rampup-samples / steps
@@ -100,7 +100,7 @@ class RampupBatchsizeNumMicroBatches(NumMicroBatchesCalculator):
         self.micro_batch_times_data_parallel_size = self.micro_batch_size * \
                                                     self.data_parallel_size
         assert self.micro_batch_times_data_parallel_size > 0
-        
+
         assert start_batch_size > 0
         self.start_batch_size = start_batch_size
 

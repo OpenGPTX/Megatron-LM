@@ -38,4 +38,3 @@ python -m torch.distributed.run $DISTRIBUTED_ARGS examples/detxoify_lm/generate_
        --max-tokens-to-oom 1200000 \
        --top_p 0.9 \
        --seed $SEED
-

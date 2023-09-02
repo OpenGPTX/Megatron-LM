@@ -1,6 +1,6 @@
 # BSD 3-Clause License
 #
-# Copyright (c) Soumith Chintala 2016, 
+# Copyright (c) Soumith Chintala 2016,
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,20 +28,17 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# code taken from 
+# code taken from
 # https://github.com/pytorch/vision/blob/main/torchvision/datasets/cityscapes.py
 # modified it to change max label index from 255 to 19 (num_classes)
 
 import torch
-import json
 import os
 from collections import namedtuple
-from typing import Any, Callable, Dict, List, Optional, Union, Tuple
+from typing import Any, Callable, Optional, Tuple
 import numpy as np
-from torchvision.datasets.utils import extract_archive, verify_str_arg, iterable_to_str
 from torchvision.datasets import VisionDataset
 from PIL import Image
-from megatron import print_rank_0
 
 
 class Cityscapes(VisionDataset):
@@ -103,7 +100,7 @@ class Cityscapes(VisionDataset):
 
 
     # Based on https://github.com/mcordts/cityscapesScripts
-    CityscapesClass = namedtuple('CityscapesClass', ['name', 'id', 'train_id', 
+    CityscapesClass = namedtuple('CityscapesClass', ['name', 'id', 'train_id',
         'category', 'category_id', 'has_instances', 'ignore_in_eval', 'color'])
 
     classes = [
@@ -184,8 +181,8 @@ class Cityscapes(VisionDataset):
             than one item. Otherwise target is a json object if target_type="polygon", else the image segmentation.
         """
         image = Image.open(self.images[index]).convert('RGB')
-        
-        target = Image.open(self.targets[index]) 
+
+        target = Image.open(self.targets[index])
         target = np.array(target)
 
         target_copy = target.copy()
@@ -204,4 +201,3 @@ class Cityscapes(VisionDataset):
     def __len__(self) -> int:
         # len(self.images)
         return len(self.images)
-

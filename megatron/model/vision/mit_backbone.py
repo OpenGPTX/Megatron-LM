@@ -2,13 +2,12 @@
 # Copyright (c) 2021, NVIDIA Corporation. All rights reserved.
 #
 # This work is licensed under the NVIDIA Source Code License
-# found in the LICENSE file in the root directory of this 
+# found in the LICENSE file in the root directory of this
 # source tree.
 # ---------------------------------------------------------------
 import math
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from functools import partial
 from torch.nn.init import trunc_normal_
 from megatron.model.transformer import DropPath
@@ -339,7 +338,7 @@ class MixVisionTransformer(nn.Module):
 
     def forward(self, x):
         x = self.forward_features(x)
-    
+
         if self.output_avg:
             x = x[3].mean(dim=1)
 
@@ -382,7 +381,7 @@ class mit_b2(MixVisionTransformer):
             qkv_bias=True, norm_layer=partial(LayerNorm, eps=1e-6), depths=[3, 4, 6, 3], sr_ratios=[8, 4, 2, 1],
             drop_rate=0.0, drop_path_rate=0.1)
 
- 
+
 class mit_b3(MixVisionTransformer):
     def __init__(self, **kwargs):
         super(mit_b3, self).__init__(
@@ -417,4 +416,3 @@ class mit_b5_avg(MixVisionTransformer):
             patch_size=4, embed_dims=[64, 128, 320, 512], num_heads=[1, 2, 5, 8], mlp_ratios=[4, 4, 4, 4],
             qkv_bias=True, norm_layer=partial(LayerNorm, eps=1e-6), depths=[3, 6, 40, 3], sr_ratios=[8, 4, 2, 1],
             drop_rate=0.0, drop_path_rate=drop_path_rate, output_avg=True)
-

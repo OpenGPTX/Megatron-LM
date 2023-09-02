@@ -42,6 +42,3 @@ export JOB_NAME=results_figure_14_pipeline_parallel_size_${PP}_data_parallel_siz
 
 
 exit 0
-
-
-

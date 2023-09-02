@@ -4,7 +4,6 @@
 
 import os
 import sys
-import torch
 
 from megatron import dist_signal_handler
 from megatron.tokenizer import build_tokenizer
@@ -97,7 +96,7 @@ def set_global_variables(args, build_tokenizer=True):
 
     if args.exit_signal_handler:
         _set_signal_handler()
-    
+
 
 def set_args(args):
     global _GLOBAL_ARGS
@@ -186,6 +185,3 @@ def _ensure_var_is_initialized(var, name):
 def _ensure_var_is_not_initialized(var, name):
     """Make sure the input variable is not None."""
     assert var is None, '{} is already initialized.'.format(name)
-
-
-

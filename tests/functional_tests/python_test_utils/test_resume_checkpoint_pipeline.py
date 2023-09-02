@@ -1,7 +1,4 @@
 import os
-import sys
-import json
-import shutil
 import glob
 from tensorboard.backend.event_processing import event_accumulator
 
@@ -19,16 +16,16 @@ def read_tb_logs_as_list(path, summary_name, index):
         summary_list = [round(x.value, 5) for x in summary]
         print(summary_list)
         return summary_list
-    raise FileNotFoundError(f"File not found matching: {path}/events*")    
+    raise FileNotFoundError(f"File not found matching: {path}/events*")
 
 def collect_train_test_metrics(logs_dir, index):
     train_loss_list = read_tb_logs_as_list(logs_dir, "lm loss", index)
     train_loss_list = [round(elem,3) for elem in train_loss_list]
     train_metrics = {
         "lm loss": train_loss_list[0:len(train_loss_list):5],
-    } 
+    }
     str_train_metrics = str(train_metrics).replace("'", "\"")
-    print(f"\n ----------- The following are the metrics for ----------")
+    print("\n ----------- The following are the metrics for ----------")
     print(f"\n {str_train_metrics}", flush=True)
     return train_metrics
 

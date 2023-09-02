@@ -3,7 +3,7 @@
 """ Utilities for operating with dicts and lists. """
 
 from collections import defaultdict
-from typing import Any, Callable, Iterable, Optional, Tuple, Union
+from typing import Any, Callable, Iterable, Tuple, Union
 
 import torch
 
@@ -80,7 +80,8 @@ def diff(x1: Any, x2: Any, prefix: Tuple = ()) -> Tuple[list, list, list]:
 
 
 def inspect_keys_types(d: dict, prefix: Tuple = (), indent: int = 4):
-    print_indent = lambda: print(' ' * indent * len(prefix), end='')
+    def print_indent():
+        return print(' ' * indent * len(prefix), end='')
     for k, v in d.items():
         if isinstance(v, dict):
             print_indent()
@@ -95,7 +96,8 @@ def inspect_keys_types(d: dict, prefix: Tuple = (), indent: int = 4):
 
 
 def inspect_types(x: Any, prefix: Tuple = (), indent: int = 4):
-    print_indent = lambda: print(' ' * indent * len(prefix), end='')
+    def print_indent():
+        return print(' ' * indent * len(prefix), end='')
     if isinstance(x, dict):
         print()
         for k, v in x.items():

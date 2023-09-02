@@ -49,6 +49,3 @@ export JOB_NAME=results_figure_17_activation_recomputation_${ACTIVATION_RECOMPUT
 
 
 exit 0
-
-
-

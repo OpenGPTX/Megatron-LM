@@ -24,7 +24,7 @@ def get_tasks_args(parser):
                        help='Output file got from --sample-input-file')
     group.add_argument('--prompt-file', type=str, default=None,
                        help='prompting file')
-    group.add_argument('--prompt-type', type=str, default=None, 
+    group.add_argument('--prompt-type', type=str, default=None,
                        choices=['knowledge', 'response'],
                        help='prompt type (knowledge or response)')
     group.add_argument('--num-prompt-examples', type=int, default=10,

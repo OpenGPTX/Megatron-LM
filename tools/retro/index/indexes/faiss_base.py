@@ -7,13 +7,12 @@ instantiable, it is meant to be extended with optimizations in classes that
 inherit from this class (see FaissParAddIndex, for an example).
 """
 
-from datetime import timedelta
 import numpy as np
 import os
 import torch
 from tqdm import tqdm
 
-from megatron import get_retro_args, print_rank_0
+from megatron import get_retro_args
 from tools.bert_embedding import BertEmbedder
 from tools.retro.external_libs import faiss
 from tools.retro.index.index import Index

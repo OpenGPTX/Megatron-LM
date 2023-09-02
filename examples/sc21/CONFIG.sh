@@ -25,7 +25,7 @@ BPE_MERGE_FILE=<path to bpe merges file>
 
 # Megatron input parameters.
 # `MEGATRON_EXTRA_PARAMS` can be used to provide any extra parameters
-# that are not listed here. 
+# that are not listed here.
 export MEGATRON_PARAMS=" ${MEGATRON_EXTRA_PARAMS} \
 	--tensor-model-parallel-size ${TP} \
 	--pipeline-model-parallel-size ${PP} \
@@ -53,5 +53,3 @@ export MEGATRON_PARAMS=" ${MEGATRON_EXTRA_PARAMS} \
         --clip-grad 1.0 \
         --fp16 \
 	--loss-scale 8192 "
-
-

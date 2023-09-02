@@ -56,4 +56,4 @@ python -m torch.distributed.launch $DISTRIBUTED_ARGS \
        --pipeline-model-parallel-size $PP_SIZE \
        ${VP_SIZE:+--num-layers-per-virtual-pipeline-stage "$VP_SIZE"} \
        --no-gradient-accumulation-fusion \
-       --fp16 
+       --fp16

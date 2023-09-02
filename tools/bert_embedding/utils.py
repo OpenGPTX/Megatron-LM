@@ -7,7 +7,6 @@ import os
 import torch
 from tqdm import tqdm
 
-from megatron import print_rank_0
 from megatron.core import parallel_state
 
 from .external_libs import h5py

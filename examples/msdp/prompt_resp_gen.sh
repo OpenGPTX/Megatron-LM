@@ -40,7 +40,7 @@ python -m torch.distributed.launch $DISTRIBUTED_ARGS ./tasks/msdp/main.py \
         --prompt-file ${PROMPT_PATH} \
         --prompt-type response \
         --num-prompt-examples 20 \
-        --task MSDP-PROMPT 
+        --task MSDP-PROMPT
 
-# NOTE: If you use api for the model generation, please use 
-# the "--api-prompt" flag (setting this value as True). 
+# NOTE: If you use api for the model generation, please use
+# the "--api-prompt" flag (setting this value as True).

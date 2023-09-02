@@ -1,8 +1,6 @@
 # Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
 
-import operator
-from functools import reduce
-from typing import Callable, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import torch
 
@@ -174,7 +172,7 @@ def _p2p_ops(
     group: torch.distributed.ProcessGroup
 ):
     reqs = []
-    rank = get_pipeline_model_parallel_rank()
+    get_pipeline_model_parallel_rank()
     if get_pipeline_model_parallel_rank() % 2 == 0:
         if tensor_send_next is not None:
             send_next_req = torch.distributed.isend(

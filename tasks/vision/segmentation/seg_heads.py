@@ -1,6 +1,4 @@
 # Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
-import math
-import einops
 import torch
 import apex
 import torch.nn.functional as F
@@ -124,4 +122,3 @@ class SegformerSegmentationHead(MegatronModule):
         x = self.linear_pred(x)
 
         return x
-

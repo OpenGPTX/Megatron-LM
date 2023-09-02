@@ -4,7 +4,6 @@ import pytest
 
 import torch
 
-from megatron.core.transformer.transformer_config import TransformerConfig
 from megatron.core.models.gpt.gpt_embedding import GPTEmbedding
 
 
