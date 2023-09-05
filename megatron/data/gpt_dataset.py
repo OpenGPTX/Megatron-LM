@@ -12,8 +12,7 @@ import torch
 from megatron import print_rank_0
 from megatron.core import mpu
 from megatron.data.blendable_dataset import BlendableDataset
-from megatron.data.dataset_utils import get_datasets_weights_and_num_samples
-from megatron.data.dataset_utils import get_train_valid_test_split_
+from megatron.data.dataset_utils import get_datasets_weights_and_num_samples, get_train_valid_test_split_
 from megatron.data.indexed_dataset import make_dataset as make_indexed_dataset
 
 
@@ -427,7 +426,7 @@ def _build_index_mappings(name, data_prefix, documents, sizes,
             from megatron.data import helpers
             assert doc_idx.dtype == np.int32
             assert sizes.dtype == np.int32
-            sample_idx = helpers.build_sample_idx(sizes, doc_idx, seq_length,
+            sample_idx = _build_sample_idx(sizes, doc_idx, seq_length,
                                                   num_epochs, tokens_per_epoch)
             np.save(idx_path['sample'], sample_idx, allow_pickle=True)
             print_rank_0(' > elasped time to build and save sample-idx mapping '

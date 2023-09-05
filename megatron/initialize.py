@@ -2,24 +2,21 @@
 
 """Megatron initialization."""
 
-import random
 import os
+import random
 import time
+from datetime import timedelta
 
 import numpy as np
 import torch
-from datetime import timedelta
 
-from megatron import fused_kernels
-from megatron import get_adlr_autoresume
-from megatron import get_args
-from megatron import get_tensorboard_writer
-from megatron.core import mpu, tensor_parallel
+from megatron import fused_kernels, get_adlr_autoresume, get_args, get_tensorboard_writer
 from megatron.arguments import parse_args, validate_args
 from megatron.checkpointing import load_args_from_checkpoint
+from megatron.core import mpu, tensor_parallel
 from megatron.global_vars import set_global_variables
-from megatron.model.transformer import bias_dropout_add_fused_train
 from megatron.model.fused_bias_gelu import bias_gelu
+from megatron.model.transformer import bias_dropout_add_fused_train
 
 
 def initialize_megatron(
@@ -100,9 +97,9 @@ def _compile_dependencies():
     if torch.distributed.get_rank() == 0:
         start_time = time.time()
         print("> compiling dataset index builder ...")
-        from megatron.data.dataset_utils import compile_helper
+        # from megatron.data.dataset_utils import compile_helper
 
-        compile_helper()
+        # compile_helper()
         print(
             ">>> done with dataset index builder. Compilation time: {:.3f} "
             "seconds".format(time.time() - start_time),
