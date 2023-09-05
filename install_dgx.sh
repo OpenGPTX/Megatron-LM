@@ -16,6 +16,9 @@ bash install_apex.sh
 # See https://github.com/NVIDIA/apex/pull/323#discussion_r287021798
 bash install_apex.sh
 
+# adapt the python path to this project in the .env file e.g.:
+# pythonpath=PYTHONPATH="${PYTHONPATH}:/raid/s3/opengptx/alexw/Megatron-LM/"
+# sed -i "1s/.*/$pythonpath/" .env
 
-echo 'PYTHONPATH="${PYTHONPATH}:/raid/s3/opengptx/alexw/Megatron-LM/"' > .env
-eval $(cat .env) python tests/test_installation.py
+# check if the test succeeds
+export $(cat .env | xargs) && pytest tests/test_training.py
