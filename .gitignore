@@ -8,3 +8,4 @@ slurm*
 logs
 .env
 .vscode
+tests/resources/dataset/index-cache
