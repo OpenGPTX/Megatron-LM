@@ -423,7 +423,7 @@ def _build_index_mappings(name, data_prefix, documents, sizes,
             start_time = time.time()
             # Use C++ implementation for speed.
             # First compile and then import.
-            from megatron.data import helpers
+            # from megatron.data import helpers
             assert doc_idx.dtype == np.int32
             assert sizes.dtype == np.int32
             sample_idx = _build_sample_idx(sizes, doc_idx, seq_length,
