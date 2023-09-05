@@ -39,9 +39,6 @@ export CMD=" \
  --init-method-std 0.02 \
  --bf16 \
  --seed 42 \
- --reset-attention-mask \
- --reset-position-ids \
- --use-flash-attn \
  --no-position-embedding \
  --position-embedding-type rotary \
  --optimizer adam \
