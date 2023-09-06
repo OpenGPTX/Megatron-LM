@@ -2,26 +2,29 @@
 
 """Processing large data for pretraining."""
 import argparse
-import math
 import json
+import math
 import os
 import sys
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                              os.path.pardir)))
-import time
-import gzip
 import glob
-import torch
-import numpy as np
+import gzip
 import multiprocessing
+import time
+
+import numpy as np
+import torch
+
 try:
     import nltk
     nltk_available = True
 except ImportError:
     nltk_available = False
 
-from megatron.tokenizer import build_tokenizer
 from megatron.data import indexed_dataset
+from megatron.tokenizer import build_tokenizer
 
 
 # https://stackoverflow.com/questions/33139531/preserve-empty-lines-with-nltks-punkt-tokenizer
@@ -375,7 +378,7 @@ def main():
                                                              key, level)
             builders[key].merge_file_(full_partition_output_prefix)
         builders[key].finalize(output_idx_files[key])
-
+    pass
 
 if __name__ == '__main__':
     main()
