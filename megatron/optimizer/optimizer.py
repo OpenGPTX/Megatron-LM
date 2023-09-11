@@ -241,6 +241,8 @@ class MegatronOptimizer(ABC):
             unwrapped_model = self.models[0]
             unwrapped_model = unwrap_model(
                 unwrapped_model, (torchDDP, LocalDDP, Float16Module))
+            if not unwrapped_model.language_model.embedding.add_position_embedding:
+                return
             assert args.DDP_impl == 'local', \
                 'T5 model is only supported with local DDP mode'
             grad = unwrapped_model.language_model.embedding.position_embeddings.weight.main_grad

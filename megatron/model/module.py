@@ -108,7 +108,8 @@ class MegatronModule(torch.nn.Module):
         # embeddings have the same initial parameter values
         # NOTE: We don't currently support T5 with the interleaved schedule.
         if mpu.is_rank_in_position_embedding_group() and \
-                args.pipeline_model_parallel_split_rank is not None:
+                args.pipeline_model_parallel_split_rank is not None \
+                and self.language_model.embedding.add_position_embedding:
             # TODO: Support tokentype embedding.
             self.language_model.embedding.cuda()
             position_embeddings = self.language_model.embedding.position_embeddings
