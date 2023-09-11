@@ -83,17 +83,27 @@ def build_tokenizer(args):
         tokenizer = _NullTokenizer(args.vocab_size)
     elif args.tokenizer_type == "OpenGPTX-HFTokenizer":
         _assert_gptx_tokenizer_available(args.tokenizer_type, HFTokenizer)
-        tokenizer = HFTokenizer.instantiate_from_file_or_name(model_file_or_name=args.tokenizer_model)
+        tokenizer = _OpenGPTXHFTokenizer(
+            args.tokenizer_model,
+            vocab_extra_ids=args.vocab_extra_ids,
+            ul2_denoiser_tokens=ul2_denoiser_tokens,
+        )
         tokenizer.add_special_tokens(ul2_denoiser_tokens)
     elif args.tokenizer_type == "OpenGPTX-PretrainedHFTokenizer":
         _assert_gptx_tokenizer_available(
             args.tokenizer_type, PretrainedHFTokenizer)
-        tokenizer = PretrainedHFTokenizer.instantiate_from_file_or_name(model_file_or_name=args.tokenizer_model)
-        tokenizer.add_special_tokens(ul2_denoiser_tokens)
+        tokenizer = _OpenGPTXPretrainedHFTokenizer(
+            args.tokenizer_model,
+            vocab_extra_ids=args.vocab_extra_ids,
+            ul2_denoiser_tokens=ul2_denoiser_tokens,
+        )
     elif args.tokenizer_type == "OpenGPTX-SPTokenizer":
         _assert_gptx_tokenizer_available(args.tokenizer_type, SPTokenizer)
-        tokenizer = SPTokenizer.instantiate_from_file_or_name(model_file_or_name=args.tokenizer_model)
-        tokenizer.add_special_tokens(ul2_denoiser_tokens)
+        tokenizer = _OpenGPTXSPTokenizer(
+            args.tokenizer_model,
+            vocab_extra_ids=args.vocab_extra_ids,
+            ul2_denoiser_tokens=ul2_denoiser_tokens,
+        )
     elif args.tokenizer_type == 'ByteTokenizer':
         tokenizer = _ByteTokenizer(vocab_extra_ids=args.vocab_extra_ids)
     else:
@@ -709,6 +719,158 @@ class _NullTokenizer:
     @property
     def additional_special_tokens_ids(self):
         return None
+
+
+class _OpenGPTXTokenizer(AbstractTokenizer):
+    tokenizer_cls = None
+    name = ''
+
+    def __init__(
+            self,
+            tokenizer_model,
+            vocab_extra_ids=0,
+            ul2_denoiser_tokens=None,
+    ):
+        assert self.tokenizer_cls is not None and self.name, \
+            'please override `tokenizer_cls` and `name` attributes'
+        super().__init__(self.name)
+
+        self.tokenizer = self.tokenizer_cls.instantiate_from_file_or_name(
+            model_file_or_name=tokenizer_model)
+
+        self._extra_id_tokens = [
+            f"<extra_id_{i}>" for i in range(vocab_extra_ids)]
+
+        if ul2_denoiser_tokens is None:
+            ul2_denoiser_tokens = []
+        self._ul2_tokens = ul2_denoiser_tokens
+
+        special_tokens = self._extra_id_tokens.copy()
+        if self._ul2_tokens:
+            special_tokens.extend(self._ul2_tokens)
+            extra_ul2_tokens = [
+                '<sep>',
+                '<mask>',
+                self.tokenizer.pad_token,
+                self.tokenizer.bos_token,
+                self.tokenizer.eos_token,
+            ]
+            special_tokens.extend(extra_ul2_tokens)
+
+        special_tokens = [
+            token
+            for token in special_tokens
+            if token not in self.tokenizer.vocab
+        ]
+        self.tokenizer.add_special_tokens(special_tokens)
+        self.pad_id = self.tokenizer.vocab.get(self.tokenizer.pad_token)
+        self._bos_token_id = self.tokenizer.vocab.get(self.tokenizer.bos_token)
+        self._eos_token_id = self.tokenizer.vocab.get(self.tokenizer.eos_token)
+
+        if self._ul2_tokens:
+            self.sep_id = self.tokenizer.vocab['<sep>']
+            self.mask_id = self.tokenizer.vocab['<mask>']
+        else:
+            self.sep_id = None
+            self.mask_id = None
+
+        eod_id = self.tokenizer.eod
+        if eod_id is None:
+            eod_id = self.tokenizer.vocab.get(self.tokenizer.eod_token)
+        self.eod_id = eod_id
+
+    @property
+    def vocab_size(self):
+        return self.tokenizer.vocab_size
+
+    @property
+    def vocab(self):
+        return self.tokenizer.vocab
+
+    @property
+    def inv_vocab(self):
+        return self.tokenizer.inv_vocab
+
+    def tokenize(self, text):
+        return self.tokenizer.encode(text)
+
+    def detokenize(self, ids):
+        return self.tokenizer.decode(ids)
+
+    @property
+    def cls(self):
+        if self.cls_id is None:
+            raise AttributeError(
+                f'OpenGPTX-{self.tokenizer_cls.__name__} does not have a CLS '
+                f'token by default; please add it to the `special_tokens`')
+        return self.cls_id
+
+    @property
+    def sep(self):
+        if self.sep_id is None:
+            raise AttributeError(
+                f'OpenGPTX-{self.tokenizer_cls.__name__} does not have a SEP '
+                f'token by default; please add it to the `special_tokens`')
+        return self.sep_id
+
+    @property
+    def pad(self):
+        if self.pad_id is None:
+            raise AttributeError(
+                f'OpenGPTX-{self.tokenizer_cls.__name__} does not have a PAD '
+                f'token by default; please add it to the `special_tokens`')
+        return self.pad_id
+
+    @property
+    def eod(self):
+        return self.eod_id
+
+    @property
+    def mask(self):
+        if self.mask_id is None:
+            raise AttributeError(
+                f'OpenGPTX-{self.tokenizer_cls.__name__} does not have a MASK '
+                f'token by default; please add it to the `special_tokens`')
+        return self.mask_id
+
+    @property
+    def bos_token_id(self):
+        if self._bos_token_id is None:
+            raise AttributeError(
+                f'OpenGPTX-{self.tokenizer_cls.__name__} does not have a BOS '
+                f'token by default; please add it to the `special_tokens`')
+        return self._bos_token_id
+
+    @property
+    def eos_token_id(self):
+        if self._eos_token_id is None:
+            raise AttributeError(
+                f'OpenGPTX-{self.tokenizer_cls.__name__} does not have a EOS '
+                f'token by default; please add it to the `special_tokens`')
+        return self._eos_token_id
+
+    @property
+    def additional_special_tokens_ids(self):
+        return [self.vocab[k] for k in self._extra_id_tokens]
+
+    @property
+    def ul2_token_ids(self):
+        return [self.vocab[k] for k in self._ul2_tokens]
+
+
+class _OpenGPTXHFTokenizer(_OpenGPTXTokenizer):
+    tokenizer_cls = HFTokenizer
+    name = 'OpenGPTX-HF'
+
+
+class _OpenGPTXPretrainedHFTokenizer(_OpenGPTXTokenizer):
+    tokenizer_cls = PretrainedHFTokenizer
+    name = 'OpenGPTX-PretrainedHF'
+
+
+class _OpenGPTXSPTokenizer(_OpenGPTXTokenizer):
+    tokenizer_cls = SPTokenizer
+    name = 'OpenGPTX-SP'
 
 
 class _ByteTokenizer(AbstractTokenizer):
