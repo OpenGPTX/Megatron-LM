@@ -711,13 +711,16 @@ class _NullTokenizer:
         return None
 
 
-class _ByteTokenizer:
+class _ByteTokenizer(AbstractTokenizer):
     NUM_BYTE_VALUES = 256
 
     def __init__(
             self,
             vocab_extra_ids=0,
     ):
+        name = 'ByteTokenizer'
+        super().__init__(name)
+
         vocab_size = _ByteTokenizer.NUM_BYTE_VALUES
 
         self._extra_id_tokens = [
@@ -738,14 +741,26 @@ class _ByteTokenizer:
         self._eos_token_id = None
         self.eod_id = self.special_tokens['<EOD>']
 
-        self.vocab_size = vocab_size + len(self.special_tokens)
-        self.vocab = {chr(i): i for i in range(_ByteTokenizer.NUM_BYTE_VALUES)}
-        self.vocab.update(self.special_tokens)
-        assert len(self.vocab) == self.vocab_size, (
+        self._vocab_size = vocab_size + len(self.special_tokens)
+        self._vocab = {chr(i): i for i in range(_ByteTokenizer.NUM_BYTE_VALUES)}
+        self._vocab.update(self.special_tokens)
+        assert len(self._vocab) == self._vocab_size, (
             "unexpected vocabulary size; make sure none of the specified "
             "special tokens collide with the original 256 ASCII symbols"
         )
-        self.inv_vocab = {v: k for (k, v) in self.vocab.items()}
+        self._inv_vocab = {v: k for (k, v) in self._vocab.items()}
+
+    @property
+    def vocab_size(self):
+        return self._vocab_size
+
+    @property
+    def vocab(self):
+        return self._vocab
+
+    @property
+    def inv_vocab(self):
+        return self._inv_vocab
 
     def tokenize(self, text):
         # This always byte-tokenizes even sequences that would result in
