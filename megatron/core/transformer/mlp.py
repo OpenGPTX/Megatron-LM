@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from megatron.core import tensor_parallel
 from megatron.core.fusions.fused_bias_gelu import bias_gelu_impl
 from megatron.core.transformer.custom_layers.transformer_engine import (
-    TEColumnParallelLinear,
+    TELayerNormColumnParallelLinear,
     TERowParallelLinear,
     TET5GLU,
 )
@@ -51,7 +51,7 @@ class MLP(MegatronModule):
             )
             self.activation_func = torch.nn.Identity()
         else:
-            self.linear_fc1 = TEColumnParallelLinear(
+            self.linear_fc1 = TELayerNormColumnParallelLinear(
                 self.config.hidden_size,
                 ffn_hidden_size,
                 config=self.config,
@@ -67,8 +67,6 @@ class MLP(MegatronModule):
                     return self.config.activation_func(x[0]) * x[1]
 
                 self.activation_func = glu
-            else:
-                self.activation_func = self.config.activation_func
 
         self.linear_fc2 = TERowParallelLinear(
             self.config.ffn_hidden_size,
