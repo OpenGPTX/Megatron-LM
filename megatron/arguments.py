@@ -1455,5 +1455,9 @@ def _add_ul2_args(parser):
                        '`--ul2-pack-any` is *not* given, whether to '
                        'repeat the prompt token for each packed sample.',
                        dest='ul2_pack_repeat_prompt')
+    # Has to be `None` by default so it can be overridden by `defaults`
+    # in `validate_args` but still evaluate to `False`.
+    group.add_argument('--_is_ul2', help=argparse.SUPPRESS)
+
 
     return parser
