@@ -39,6 +39,9 @@ def add_text_generate_args(parser):
                        help='Top k sampling.')
     group.add_argument("--out-seq-length", type=int, default=1024,
                        help='Size of the output generated text.')
+    group.add_argument("--server-port", type=int, default=5000,
+                       help='Server port.')
+
     return parser
 
 
@@ -62,7 +65,7 @@ if __name__ == "__main__":
     model = model[0]
     if mpu.is_pipeline_first_stage() and mpu.get_tensor_model_parallel_rank() == 0:
         server = MegatronServer(model)
-        server.run("0.0.0.0")
+        server.run("0.0.0.0", port=args.server_port)
 
     while True:
         choice = torch.cuda.LongTensor(1)

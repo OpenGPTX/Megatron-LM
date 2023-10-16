@@ -19,8 +19,8 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]:-${(%):-%x}}" )" &> /dev/nu
 
 export CMD=" \
        $SCRIPT_DIR/../tools/run_text_generation_server.py \
-       --load /p/scratch/opengptx-elm/ali5/opengpt/megatron-lm/2023-07-27_17-52-53/output_dir/2_6B_monolingual_eng-bpe_hf_32768_10_rotary.sh/checkpoints \
-       --tokenizer-model /p/scratch/opengptx-elm/data/datasources_opgptx/data_quality_experiments_datasets/ablations_studies/monolingual_en/70B_10/tokenizer_training/bpe/hf/32768_10/bpe_tokenizer.json \
+       --load /beegfs/p_gptx/tokenizer_study/cp_2_6B_iter_0053100/checkpoints/2_6B_monolingual_eng-bpe_hf_32768_10_rotary.sh/checkpoints \
+       --tokenizer-model /beegfs/p_gptx/tokenizer_study/2_6B_tokenizer_models/2_6B_monolingual_eng-bpe_hf_32768_10_rotary.sh/tokenizer/iter_0053100/tokenizer.json \
        --tokenizer-type OpenGPTX-HFTokenizer \
        --pipeline-model-parallel-size 1 \
        --tensor-model-parallel-size 2 \
@@ -39,7 +39,7 @@ export CMD=" \
        --no-position-embedding \
        "
 
-export LAUNCHER="python -u -m torch.distributed.run \
+export LAUNCHER="python -u -m torch.distributed.launch \
     --nproc_per_node 2 \
     --nnodes 1 \
     --node_rank 0 \
@@ -47,4 +47,5 @@ export LAUNCHER="python -u -m torch.distributed.run \
     --master_port 6000"
 
 
-bash -c "$LAUNCHER $CMD" 
+bash -c "$LAUNCHER $CMD"
+

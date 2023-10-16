@@ -391,5 +391,5 @@ class MegatronServer(object):
             MegatronMetadata, "/metadata", resource_class_args=[get_tokenizer()]
         )
 
-    def run(self, url):
-        self.app.run(url, threaded=True, debug=False)
+    def run(self, url, port):
+        self.app.run(url, port, threaded=True, debug=False)
