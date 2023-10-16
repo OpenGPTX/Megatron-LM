@@ -375,9 +375,9 @@ class DistributedOptimizer(MixedPrecisionOptimizer):
 
         try:
             from adan import Adan
+            self._is_adan = isinstance(optimizer, Adan)
         except ImportError:
-            Adan = None
-        self._is_adan = isinstance(optimizer, Adan)
+            self._is_adan = False
 
         assert self._is_adan or isinstance(optimizer, Adam), (
             "Only Adam or Adan currently supported, due to checkpointing "
