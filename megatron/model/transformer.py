@@ -2,6 +2,7 @@
 
 """Transformer."""
 from contextlib import nullcontext
+import inspect
 import math
 import numpy as np
 import torch
@@ -499,7 +500,7 @@ class TritonFlashSelfAttention(torch.nn.Module):
     def __init__(self, nhead_per_partition, causal=False, softmax_scale=None,
                  attention_dropout=0.0, device=None, dtype=None):
         super().__init__()
-        assert triton_flash_attn is not None, (
+        assert triton_flash_attn is not None and self.has_mask_support(), (
             'Please install `triton` with support for FlashAttention with '
             'attention masks first, e.g., with `pip install '
             'git+https://github.com/janEbert/triton.git@attn-mask`.'
@@ -512,6 +513,11 @@ class TritonFlashSelfAttention(torch.nn.Module):
         self.causal = causal
         self.softmax_scale = softmax_scale
         self.dropout_p = attention_dropout
+
+    @staticmethod
+    def has_mask_support():
+        sig = inspect.signature(triton_flash_attn.__self__.forward)
+        return 'mask' in sig.parameters
 
     def forward(self, q, k, v, attn_mask=None, alibi=None):
         if attn_mask is None:
