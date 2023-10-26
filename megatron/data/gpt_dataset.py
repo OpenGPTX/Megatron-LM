@@ -168,6 +168,7 @@ def _build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
 def build_dataset(dataset_name, data_prefix, data_impl,
                   splits_string, num_samples,
                   seq_length, seed, skip_warmup,
+                  doc_idx_path,
                   *,
                   data_cache_path=None):
     dataset = None
@@ -175,6 +176,7 @@ def build_dataset(dataset_name, data_prefix, data_impl,
         dataset = _build_dataset(dataset_name, data_prefix[0], data_impl,
                                  splits_string, num_samples, seq_length,
                                  seed, skip_warmup,
+                                 doc_idx_path,
                                  data_cache_path=data_cache_path)
     else:
         # Blending dataset.
@@ -202,6 +204,7 @@ def build_dataset(dataset_name, data_prefix, data_impl,
 
 def _build_dataset(dataset_name, data_prefix, data_impl, splits_string,
                    num_samples, seq_length, seed, skip_warmup,
+                   doc_idx_path,
                    *,
                    data_cache_path=None):
     """
@@ -225,6 +228,7 @@ def _build_dataset(dataset_name, data_prefix, data_impl, splits_string,
 
     dataset = GPTDataset(dataset_name, data_prefix, documents, indexed_dataset,
                          splits_string, num_samples, seq_length, seed,
+                         doc_idx_path,
                          data_cache_path=data_cache_path)
 
     return dataset
