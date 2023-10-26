@@ -20,6 +20,7 @@ from megatron.data.indexed_dataset import make_dataset as make_indexed_dataset
 def build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
                                     train_valid_test_num_samples,
                                     seq_length, seed, skip_warmup,
+                                    train_doc_idx_path=None,
                                     train_data_prefix=None,
                                     valid_data_prefix=None,
                                     test_data_prefix=None,
@@ -36,6 +37,7 @@ def build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
                                                     data_impl, splits_string,
                                                     train_valid_test_num_samples,
                                                     seq_length, seed, skip_warmup,
+                                                    train_doc_idx_path,
                                                     data_cache_path=data_cache_path)
 
         # Blending dataset.
@@ -93,6 +95,7 @@ def build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
                                           splits_string,
                                           train_valid_test_num_samples[0],
                                           seq_length, seed, skip_warmup,
+                                          train_doc_idx_path,
                                           data_cache_path=data_cache_path)
 
         if valid_data_prefix is not None:
@@ -116,6 +119,7 @@ def build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
 def _build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
                                      train_valid_test_num_samples,
                                      seq_length, seed, skip_warmup,
+                                     train_doc_idx_path,
                                      return_doc_ids=False, *,
                                      data_cache_path=None):
     """Build train, valid, and test datasets."""
@@ -140,7 +144,7 @@ def _build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
     print_split_stats('validation', 1)
     print_split_stats('test', 2)
 
-    def build_dataset(index, name):
+    def build_dataset(index, name, doc_idx_path=None):
         dataset = None
         if splits[index + 1] > splits[index]:
             documents = np.arange(start=splits[index], stop=splits[index + 1],
@@ -149,11 +153,12 @@ def _build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
                                  splits_string,
                                  train_valid_test_num_samples[index],
                                  seq_length, seed,
+                                 doc_idx_path,
                                  return_doc_ids,
                                  data_cache_path=data_cache_path)
         return dataset
 
-    train_dataset = build_dataset(0, 'train')
+    train_dataset = build_dataset(0, 'train', train_doc_idx_path)
     valid_dataset = build_dataset(1, 'valid')
     test_dataset = build_dataset(2, 'test')
 
@@ -245,6 +250,7 @@ class GPTDataset(torch.utils.data.Dataset):
 
     def __init__(self, name, data_prefix, documents, indexed_dataset,
                  splits_string, num_samples, seq_length, seed,
+                 doc_idx_path=None,
                  return_doc_ids=False, *,
                  data_cache_path=None):
 
@@ -261,6 +267,7 @@ class GPTDataset(torch.utils.data.Dataset):
             _build_index_mappings(self.name, data_prefix,
                                   documents, self.indexed_dataset.sizes,
                                   splits_string, num_samples, seq_length, seed,
+                                  doc_idx_path,
                                   data_cache_path=data_cache_path)
 
 
@@ -309,6 +316,7 @@ class GPTDataset(torch.utils.data.Dataset):
 
 def _build_index_mappings(name, data_prefix, documents, sizes,
                           splits_string, num_samples, seq_length, seed,
+                          doc_idx_path,
                           *,
                           data_cache_path):
     """Build doc-idx, sample-idx, and shuffle-idx.
@@ -352,13 +360,14 @@ def _build_index_mappings(name, data_prefix, documents, sizes,
             'sample': os.path.join(prefix, sample_idx_filename),
             'shuffle': os.path.join(prefix, shuffle_idx_filename)
         }
-        for f in idx_path.values():
-            if not os.path.isfile(f):
+        if not doc_idx_path:
+            for f in idx_path.values():
+                if not os.path.isfile(f):
+                    break
+            else:
+                # Found our files!
+                build_indices = False
                 break
-        else:
-            # Found our files!
-            build_indices = False
-            break
     data_cache_dir = os.path.dirname(idx_path['desc'])
     data_cache_success = True
 
@@ -414,12 +423,19 @@ def _build_index_mappings(name, data_prefix, documents, sizes,
                 fd.write(desc)
 
             # doc-idx.
-            start_time = time.time()
-            doc_idx = _build_doc_idx(documents, num_epochs, np_rng,
-                                     separate_last_epoch)
-            np.save(idx_path['doc'], doc_idx, allow_pickle=True)
-            print_rank_0(' > elasped time to build and save doc-idx mapping '
-                         '(seconds): {:4f}'.format(time.time() - start_time))
+            if doc_idx_path:
+                doc_idx_filename = doc_idx_path
+                doc_idx = np.load(doc_idx_filename, allow_pickle=True, mmap_mode='r')
+                print_rank_0(f' > use predefined doc-idx in {doc_idx_path} instead of building a new one')
+                shuffle_samples = False
+            else:
+                start_time = time.time()
+                doc_idx = _build_doc_idx(documents, num_epochs, np_rng,
+                                         separate_last_epoch)
+                np.save(idx_path['doc'], doc_idx, allow_pickle=True)
+                print_rank_0(' > elapsed time to build and save doc-idx mapping '
+                             '(seconds): {:4f}'.format(time.time() - start_time))
+                shuffle_samples = True
             # sample-idx.
             start_time = time.time()
             # Use C++ implementation for speed.
@@ -430,7 +446,7 @@ def _build_index_mappings(name, data_prefix, documents, sizes,
             sample_idx = helpers.build_sample_idx(sizes, doc_idx, seq_length,
                                                   num_epochs, tokens_per_epoch)
             np.save(idx_path['sample'], sample_idx, allow_pickle=True)
-            print_rank_0(' > elasped time to build and save sample-idx mapping '
+            print_rank_0(' > elapsed time to build and save sample-idx mapping '
                          '(seconds): {:4f}'.format(time.time() - start_time))
             # shuffle-idx.
             start_time = time.time()
@@ -441,9 +457,9 @@ def _build_index_mappings(name, data_prefix, documents, sizes,
             else:
                 num_samples_ = sample_idx.shape[0] - 1
             shuffle_idx = _build_shuffle_idx(num_samples_,
-                                             sample_idx.shape[0] - 1, np_rng)
+                                             sample_idx.shape[0] - 1, np_rng, shuffle_samples)
             np.save(idx_path['shuffle'], shuffle_idx, allow_pickle=True)
-            print_rank_0(' > elasped time to build and save shuffle-idx mapping'
+            print_rank_0(' > elapsed time to build and save shuffle-idx mapping'
                          ' (seconds): {:4f}'.format(time.time() - start_time))
         except OSError:
             print(f'There was an error trying to create the data cache directory ({data_cache_dir})')
@@ -464,6 +480,8 @@ def _build_index_mappings(name, data_prefix, documents, sizes,
 
     # Load mappings.
     start_time = time.time()
+    if doc_idx_path:
+        idx_path['doc'] = doc_idx_path
     print_rank_0(f" > loading doc-idx mapping from {idx_path['doc']}")
     doc_idx = np.load(idx_path['doc'], allow_pickle=True, mmap_mode='r')
 
@@ -567,7 +585,7 @@ def _build_sample_idx(sizes, doc_idx, seq_length,
     return sample_idx
 
 
-def _build_shuffle_idx(num_samples, total_size, np_rng):
+def _build_shuffle_idx(num_samples, total_size, np_rng, shuffle=True):
     """Build the range [0, size) and shuffle."""
     print(' > building shuffle index with split [0, {}) and [{}, {}) '
           '...'.format(num_samples, num_samples, total_size), flush=True)
@@ -578,13 +596,15 @@ def _build_shuffle_idx(num_samples, total_size, np_rng):
 
     shuffle_idx_first = np.arange(start=0, stop=num_samples,
                                   step=1, dtype=dtype_)
-    np_rng.shuffle(shuffle_idx_first)
+    if shuffle:
+        np_rng.shuffle(shuffle_idx_first)
     if num_samples == total_size:
         return shuffle_idx_first
 
     shuffle_idx_last = np.arange(start=num_samples, stop=total_size,
                                  step=1, dtype=dtype_)
-    np_rng.shuffle(shuffle_idx_last)
+    if shuffle:
+        np_rng.shuffle(shuffle_idx_last)
 
     return np.concatenate((shuffle_idx_first, shuffle_idx_last))
 
