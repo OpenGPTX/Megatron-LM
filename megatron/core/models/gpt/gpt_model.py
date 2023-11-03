@@ -6,12 +6,16 @@ import torch
 from torch import Tensor
 
 from megatron.core import parallel_state, tensor_parallel
-
-from megatron.core.transformer.module import MegatronModule
-from megatron.core.transformer.transformer_config import TransformerConfig
-from megatron.core.transformer.transformer_block import TransformerBlock
-from megatron.core.transformer.enums import AttnMaskType, ModelType
+from megatron.core.models.common.rotary_pos_embedding import RotaryEmbedding
 from megatron.core.models.gpt.gpt_embedding import GPTEmbedding
+from megatron.core.transformer.enums import (
+    AttnMaskType,
+    ModelType,
+    PositionEmbeddingType,
+)
+from megatron.core.transformer.module import MegatronModule
+from megatron.core.transformer.transformer_block import TransformerBlock
+from megatron.core.transformer.transformer_config import TransformerConfig
 
 
 class GPTModel(MegatronModule):
@@ -32,6 +36,11 @@ class GPTModel(MegatronModule):
         share_embeddings_and_output_weights (bool): When True, input embeddings and output logit weights are
             shared. Defaults to False.
 
+        position_embedding_type (PositionEmbeddingType): Position embedding type.
+            Default is `PositionEmbeddingType.learned_absolute`.
+
+        rotary_percent (float): Percent of rotary dimension to use for rotary position embeddings.
+            Defaults to 1.0 (100%). Ignored unless position_embedding_type is `PositionEmbeddingType.rope`.
     """
 
     def __init__(
@@ -44,6 +53,8 @@ class GPTModel(MegatronModule):
         fp16_lm_cross_entropy: bool = False,
         parallel_output: bool = True,
         share_embeddings_and_output_weights: bool = False,
+        position_embedding_type: PositionEmbeddingType = PositionEmbeddingType.learned_absolute,
+        rotary_percent: float = 1.0,
     ):
         super(GPTModel, self).__init__(config=config)
 
@@ -55,6 +66,7 @@ class GPTModel(MegatronModule):
         self.fp16_lm_cross_entropy = fp16_lm_cross_entropy
         self.parallel_output = parallel_output
         self.share_embeddings_and_output_weights = share_embeddings_and_output_weights
+        self.position_embedding_type = position_embedding_type
 
         # megatron core pipelining currently depends on model type
         self.model_type = ModelType.encoder_or_decoder
@@ -62,8 +74,22 @@ class GPTModel(MegatronModule):
         # Embeddings.
         if self.pre_process:
             self.embedding = GPTEmbedding(
-                config=self.config, vocab_size=self.vocab_size, max_sequence_length=self.max_sequence_length,
+                config=self.config,
+                vocab_size=self.vocab_size,
+                max_sequence_length=self.max_sequence_length,
+                add_position_embedding=(
+                    self.position_embedding_type is PositionEmbeddingType.learned_absolute),
             )
+
+        # Rotary Position Embeddings
+        if self.position_embedding_type is PositionEmbeddingType.rope:
+            rotary_dim = self.config.kv_channels
+            if rotary_percent < 1.0:
+                rotary_dim = int(rotary_dim * rotary_percent)
+
+            self.rotary_pos_emb = RotaryEmbedding(rotary_dim)
+        else:
+            self.rotary_pos_emb = None
 
         # Transformer.
         self.decoder = TransformerBlock(
@@ -83,7 +109,9 @@ class GPTModel(MegatronModule):
                 bias=False,
                 skip_bias_add=False,
                 gather_output=not self.parallel_output,
-                skip_weight_param_allocation=self.pre_process and self.share_embeddings_and_output_weights)
+                skip_weight_param_allocation=self.pre_process
+                and self.share_embeddings_and_output_weights,
+            )
 
         if self.share_embeddings_and_output_weights and (self.pre_process or self.post_process):
             self.initialize_last_stage_with_word_embeddings()
@@ -104,21 +132,38 @@ class GPTModel(MegatronModule):
         input_ids: Tensor,
         position_ids: Tensor,
         attention_mask: Tensor,
+        decoder_input: Tensor = None,
         labels: Tensor = None,
         inference_params=None,
     ):
+        # If decoder_input is provided (not None), then input_ids and position_ids are ignored.
+        # Otherwise, apply embedding layer on input_ids and position_ids to get decoder_input.
 
-        # Encoder embedding.
-        if self.pre_process:
+        # Decoder embedding.
+        if decoder_input is not None:
+            pass
+        elif self.pre_process:
             decoder_input = self.embedding(input_ids=input_ids, position_ids=position_ids)
         else:
             # intermediate stage of pipeline
-            # encoder will get hidden_states from encoder.input_tensor
+            # decoder will get hidden_states from encoder.input_tensor
             decoder_input = None
 
-        # Run encoder.
+        # Rotary positional embeddings
+        rotary_pos_emb = None
+        if self.rotary_pos_emb is not None:
+            if inference_params is not None:
+                rotary_seq_len = inference_params.max_sequence_length
+            else:
+                rotary_seq_len = min(self.max_sequence_length, decoder_input.size(0))
+            rotary_pos_emb = self.rotary_pos_emb(rotary_seq_len)
+
+        # Run decoder.
         hidden_states = self.decoder(
-            hidden_states=decoder_input, attention_mask=attention_mask, inference_params=inference_params
+            hidden_states=decoder_input,
+            attention_mask=attention_mask,
+            inference_params=inference_params,
+            rotary_pos_emb=rotary_pos_emb,
         )
 
         if not self.post_process:
@@ -183,7 +228,9 @@ class GPTModel(MegatronModule):
         if torch.distributed.is_initialized():
             if parallel_state.is_rank_in_embedding_group():
                 weight = self.shared_embedding_or_output_weight()
-                torch.distributed.all_reduce(weight.data, group=parallel_state.get_embedding_group())
+                torch.distributed.all_reduce(
+                    weight.data, group=parallel_state.get_embedding_group()
+                )
 
         elif not getattr(GPTModel, "embedding_warning_printed", False):
             logging.getLogger(__name__).warning(

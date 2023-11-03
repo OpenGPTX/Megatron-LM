@@ -2,14 +2,28 @@
 
 import torch
 
-from megatron.core.transformer.module import MegatronModule
-from megatron.core.transformer.transformer_config import TransformerConfig
-from megatron.core.transformer.enums import AttnType, AttnMaskType
 from megatron.core.fusions.fused_bias_dropout import get_bias_dropout_add
 from megatron.core.transformer.attention import SelfAttention
+from megatron.core.transformer.custom_layers.transformer_engine import \
+    TELayerNorm, TERMSNorm
+from megatron.core.transformer.enums import AttnMaskType, AttnType
 from megatron.core.transformer.mlp import MLP
+from megatron.core.transformer.module import MegatronModule
+from megatron.core.transformer.transformer_config import TransformerConfig
 from megatron.core.utils import make_viewless_tensor
-from megatron.core.transformer.custom_layers.transformer_engine import TELayerNorm
+
+
+def _get_layernorm(config: TransformerConfig):
+    extra_kwargs = {}
+    if config.normalization == 'LayerNorm':
+        layernorm_cls = TELayerNorm
+        extra_kwargs['persist_layer_norm'] = config.persist_layer_norm
+    elif config.normalization == 'RMSNorm':
+        layernorm_cls = TERMSNorm
+    else:
+        raise ValueError(f'unknown normalization "{config.normalization}"')
+    return layernorm_cls, extra_kwargs
+
 
 class TransformerLayer(MegatronModule):
     """A single transformer layer.
@@ -19,7 +33,10 @@ class TransformerLayer(MegatronModule):
     """
 
     def __init__(
-        self, config: TransformerConfig, layer_number: int = 1, self_attn_mask_type=AttnMaskType.padding,
+        self,
+        config: TransformerConfig,
+        layer_number: int = 1,
+        self_attn_mask_type=AttnMaskType.padding,
     ):
         super().__init__(config=config)
         self.config: TransformerConfig = config
@@ -27,30 +44,29 @@ class TransformerLayer(MegatronModule):
         self.layer_number = layer_number
         self.self_attn_mask_type = self_attn_mask_type
 
+        layernorm_cls, layernorm_extra_kwargs = _get_layernorm(self.config)
         # Layernorm on the input data.
         # TODO: add pytorch only layernorm
-        self.input_layernorm = TELayerNorm(
+        self.input_layernorm = layernorm_cls(
             hidden_size=self.config.hidden_size,
             eps=self.config.layernorm_epsilon,
-            persist_layer_norm=self.config.persist_layer_norm,
             sequence_parallel=self.config.sequence_parallel,
             zero_centered_gamma=self.config.layernorm_zero_centered_gamma,
+            **layernorm_extra_kwargs,
         )
 
         # Self attention.
         self.self_attention = SelfAttention(
-            config=self.config,
-            layer_number=layer_number,
-            attn_mask_type=self_attn_mask_type,
+            config=self.config, layer_number=layer_number, attn_mask_type=self_attn_mask_type,
         )
 
         # Layernorm on the attention output
-        self.post_self_attn_layernorm = TELayerNorm(
+        self.post_self_attn_layernorm = layernorm_cls(
             hidden_size=self.config.hidden_size,
             eps=self.config.layernorm_epsilon,
-            persist_layer_norm=self.config.persist_layer_norm,
             sequence_parallel=self.config.sequence_parallel,
             zero_centered_gamma=self.config.layernorm_zero_centered_gamma,
+            **layernorm_extra_kwargs,
         )
 
         # MLP
@@ -65,13 +81,18 @@ class TransformerLayer(MegatronModule):
         self.bias_dropout_add_exec_handler = torch.enable_grad
 
         self.bias_dropout_add_func = get_bias_dropout_add(
-            self.training,
-            self.config.bias_dropout_fusion
+            self.training, self.config.bias_dropout_fusion
         )
 
     # TODO: decide how to do inference_params
     def forward(
-        self, hidden_states, attention_mask, encoder_output=None, enc_dec_attn_mask=None, inference_params=None
+        self,
+        hidden_states,
+        attention_mask,
+        encoder_output=None,
+        enc_dec_attn_mask=None,
+        inference_params=None,
+        rotary_pos_emb=None,
     ):
         # hidden_states: [s, b, h]
 
@@ -79,7 +100,10 @@ class TransformerLayer(MegatronModule):
         layernorm_output = self.input_layernorm(hidden_states)
         # Self attention.
         attention_output_with_bias = self.self_attention(
-            layernorm_output, attention_mask, inference_params=inference_params
+            layernorm_output,
+            attention_mask,
+            inference_params=inference_params,
+            rotary_pos_emb=rotary_pos_emb,
         )
 
         # Residual connection.
@@ -117,6 +141,8 @@ class TransformerLayer(MegatronModule):
         # won't result in memory savings (like the data loader, or
         # p2p_communication), it serves to document the origin of this
         # 'view' tensor.
-        output = make_viewless_tensor(inp=output, requires_grad=output.requires_grad, keep_graph=True)
+        output = make_viewless_tensor(
+            inp=output, requires_grad=output.requires_grad, keep_graph=True
+        )
 
         return output

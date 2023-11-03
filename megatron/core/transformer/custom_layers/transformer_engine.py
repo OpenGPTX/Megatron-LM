@@ -1,28 +1,38 @@
-import torch
-import transformer_engine as te
 from typing import Callable
 
-from megatron.core.transformer.transformer_config import TransformerConfig
-from megatron.core.transformer.enums import AttnMaskType
+import torch
+import transformer_engine as te
+
 from megatron.core.parallel_state import get_tensor_model_parallel_group
 from megatron.core.tensor_parallel import get_cuda_rng_tracker
+from megatron.core.transformer.enums import AttnMaskType
+from megatron.core.transformer.module import MegatronModule
+from megatron.core.transformer.transformer_config import TransformerConfig
 
-class TELayerNorm(te.pytorch.module.LayerNorm):
+
+class TELayerNorm(te.pytorch.LayerNorm):
     """
     Wrapper for the Transformer-Engine's `LayerNorm`.
     """
-    def __init__(self,
-                 hidden_size: int,
-                 eps: float = 1e-5,
-                 sequence_parallel: bool = False,
-                 **kwargs):
-        super().__init__(
-            hidden_size=hidden_size,
-            eps=eps,
-            sequence_parallel=sequence_parallel
-        )
 
-class TELinear(te.pytorch.module.Linear):
+    def __init__(
+        self, hidden_size: int, eps: float = 1e-5, sequence_parallel: bool = False, **kwargs
+    ):
+        super().__init__(hidden_size=hidden_size, eps=eps, sequence_parallel=sequence_parallel)
+
+
+class TERMSNorm(te.pytorch.RMSNorm):
+    """
+    Wrapper for the Transformer-Engine's `RMSNorm`.
+    """
+
+    def __init__(
+        self, hidden_size: int, eps: float = 1e-5, sequence_parallel: bool = False, **kwargs
+    ):
+        super().__init__(hidden_size=hidden_size, eps=eps, sequence_parallel=sequence_parallel)
+
+
+class TELinear(te.pytorch.Linear):
     """
     Wrapper for the Transformer-Engine's `Linear` layer.
 
@@ -30,15 +40,19 @@ class TELinear(te.pytorch.module.Linear):
     yet, the tp_group passed to TE will be None and must be set later
     via set_tensor_parallel_group().
     """
-    def __init__(self,
-                 input_size: int,
-                 output_size: int,
-                 config: TransformerConfig,
-                 parallel_mode: str,
-                 init_method: Callable, *,
-                 bias: bool = True,
-                 skip_bias_add: bool = False,
-                 **kwargs):
+
+    def __init__(
+        self,
+        input_size: int,
+        output_size: int,
+        config: TransformerConfig,
+        parallel_mode: str,
+        init_method: Callable,
+        *,
+        bias: bool = True,
+        skip_bias_add: bool = False,
+        **kwargs
+    ):
         self.config = config
 
         # TE returns a zero length Tensor when bias=False and
@@ -74,16 +88,14 @@ class TELinear(te.pytorch.module.Linear):
             return out
         return out, None
 
+
 class TEColumnParallelLinear(TELinear):
     """
     Wrapper for the Transformer-Engine's `Linear` layer but specialized similar
     to megatron's `ColumnParallelLinear` layer.
     """
-    def __init__(self,
-                 input_size: int,
-                 output_size: int,
-                 config: TransformerConfig,
-                 **kwargs):
+
+    def __init__(self, input_size: int, output_size: int, config: TransformerConfig, **kwargs):
         self.config = config
         super().__init__(
             input_size=input_size,
@@ -93,16 +105,14 @@ class TEColumnParallelLinear(TELinear):
             **kwargs
         )
 
+
 class TERowParallelLinear(TELinear):
     """
     Wrapper for the Transformer-Engine's `Linear` layer but specialized similar
     to megatron's `RowParallelLinear` layer.
     """
-    def __init__(self,
-                 input_size: int,
-                 output_size: int,
-                 config: TransformerConfig,
-                 **kwargs):
+
+    def __init__(self, input_size: int, output_size: int, config: TransformerConfig, **kwargs):
         self.config = config
         super().__init__(
             input_size=input_size,
@@ -112,7 +122,8 @@ class TERowParallelLinear(TELinear):
             **kwargs
         )
 
-class TECoreAttention(te.pytorch.transformer.DotProductAttention):
+
+class TEDotProductAttention(te.pytorch.DotProductAttention):
     """
     Wrapper for the Transformer-Engine's `DotProductAttention` layer that also
     has "flash attention" enabled.
@@ -121,11 +132,14 @@ class TECoreAttention(te.pytorch.transformer.DotProductAttention):
     yet, the tp_group passed to TE will be None and must be set later
     via set_tensor_parallel_group().
     """
-    def __init__(self,
-                 config: TransformerConfig,
-                 layer_number: int = 1,
-                 attn_mask_type: AttnMaskType = AttnMaskType.padding,
-                 **kwargs):
+
+    def __init__(
+        self,
+        config: TransformerConfig,
+        layer_number: int = 1,
+        attn_mask_type: AttnMaskType = AttnMaskType.padding,
+        **kwargs
+    ):
         self.config = config
         super().__init__(
             num_attention_heads=self.config.num_attention_heads,
@@ -139,3 +153,35 @@ class TECoreAttention(te.pytorch.transformer.DotProductAttention):
             tp_group=get_tensor_model_parallel_group(check_initialized=False),
             **kwargs
         )
+
+
+class TET5GLU(MegatronModule):
+    """
+    Correctly implemented GLU using Transformer Engine's `Linear` layer and
+    specialized similar to megatron's `ColumnParallelLinear` layer.
+    """
+
+    def __init__(
+            self, input_size: int, output_size: int, config: TransformerConfig, **kwargs
+    ):
+        super().__init__()
+
+        # TODO These do not accept the `gather_output` parameter. Does
+        #      TransformerEngine gather outputs by default?
+        self.linear = TEColumnParallelLinear(
+            input_size,
+            output_size,
+            config=config,
+            **kwargs,
+        )
+        self.nonlinear = TEColumnParallelLinear(
+            input_size,
+            output_size,
+            config=config,
+            **kwargs,
+        )
+        self.activation_fn = self.config.activation_func
+
+    def forward(self, x):
+        output = self.linear(x)[0] * self.activation_fn(self.nonlinear(x)[0])
+        return output, None

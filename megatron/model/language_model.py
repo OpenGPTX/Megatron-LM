@@ -8,10 +8,10 @@ import torch.nn.functional as F
 from megatron import get_args
 from megatron.core import mpu, tensor_parallel
 from megatron.core.enums import ModelType
+from megatron.core.models.common.rotary_pos_embedding import RotaryEmbedding
 
 from .enums import AttnMaskType, LayerType, PositionEmbeddingType
 from .module import MegatronModule
-from .rotary_pos_embedding import apply_rotary_pos_emb, RotaryEmbedding
 from .transformer import ParallelTransformer
 from .utils import get_linear_layer
 from .utils import init_method_normal, scaled_init_method_normal
@@ -159,7 +159,8 @@ class Embedding(MegatronModule):
         self._word_embeddings_key = 'word_embeddings'
 
         # Position embedding (serial).
-        self.add_position_embedding = args.add_position_embedding
+        self.add_position_embedding = \
+            args.position_embedding_type is PositionEmbeddingType.learned_absolute
         if self.add_position_embedding:
             self.position_embeddings = torch.nn.Embedding(
                 max_sequence_length, self.hidden_size)
@@ -371,8 +372,9 @@ class TransformerLanguageModel(MegatronModule):
             self._embedding_key = 'embedding'
 
         # Rotary positional embeddings
-        self.position_embedding_type = args.position_embedding_type
-        if args.position_embedding_type is PositionEmbeddingType.rotary:
+        self.use_rotary_position_embeddings = \
+            args.position_embedding_type is PositionEmbeddingType.rope
+        if self.use_rotary_position_embeddings:
             self.seq_length = args.seq_length
             rotary_dim = args.hidden_size // args.num_attention_heads \
                 if args.kv_channels is None else args.kv_channels
@@ -383,7 +385,10 @@ class TransformerLanguageModel(MegatronModule):
             # partial rotary embeddings, which is better than full rotary
             # Wang and Komatsuzaki et al
             # https://github.com/kingoflolz/mesh-transformer-jax/
-            self.rotary_pos_emb = RotaryEmbedding(rotary_dim)
+            self.rotary_pos_emb = RotaryEmbedding(
+                rotary_dim,
+                seq_len_interpolation_factor=args.rotary_seq_len_interpolation_factor
+            )
 
         # Encoder (usually set to True, False if part of an encoder-decoder
         # architecture and in encoder-only stage).
@@ -484,10 +489,10 @@ class TransformerLanguageModel(MegatronModule):
 
         # Rotary positional embeddings
         rotary_pos_emb = None
-        if self.position_embedding_type is PositionEmbeddingType.rotary:
+        if self.use_rotary_position_embeddings:
             if inference_params is not None:
                 rotary_pos_emb = \
-                    self.rotary_pos_emb(inference_params.max_sequence_len)
+                    self.rotary_pos_emb(inference_params.max_sequence_length)
             else:
                 rotary_pos_emb = self.rotary_pos_emb(self.seq_length)
 

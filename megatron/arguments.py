@@ -75,7 +75,7 @@ def validate_args(args, defaults={}):
     # Checks.
     model_parallel_size = args.pipeline_model_parallel_size * \
                           args.tensor_model_parallel_size
-    assert args.world_size % model_parallel_size == 0, 'world size is not'\
+    assert args.world_size % model_parallel_size == 0, 'world size ({}) is not'\
         ' divisible by tensor parallel size ({}) times pipeline parallel ' \
         'size ({})'.format(args.world_size, args.tensor_model_parallel_size,
                            args.pipeline_model_parallel_size)
@@ -251,6 +251,8 @@ def validate_args(args, defaults={}):
     if args.ffn_hidden_size is None:
         args.ffn_hidden_size = 4 * args.hidden_size
 
+    assert not (args.swiglu and args.t5_swiglu), \
+        'cannot have both `--swiglu` and `--t5-swiglu` active'
     if args.swiglu:
         # reduce the dimnesion for MLP since projections happens on
         # two linear layers. this keeps the number of paramters in
@@ -318,15 +320,10 @@ def validate_args(args, defaults={}):
         assert args.recompute_method is not None, \
             'for distributed recompute activations to work you '\
             'need to use a recompute method '
-        assert TORCH_MAJOR >= 1 and TORCH_MINOR >= 10, \
+        assert (TORCH_MAJOR, TORCH_MINOR) >= (1, 10), \
             'distributed recompute activations are supported for pytorch ' \
             'v1.10 and above (Nvidia Pytorch container >= 21.07). Current ' \
             'pytorch version is v%s.%s.' % (TORCH_MAJOR, TORCH_MINOR)
-
-    # Tranformer-Engine/FP8 related checking
-    if args.fp8_e4m3 or args.fp8_hybrid:
-        assert args.transformer_impl == 'transformer_engine', \
-            'transformer-engine required for fp8 training and inference'
 
     assert not (args.fp8_e4m3 and args.fp8_hybrid), \
         'cannot train with both fp8 e4m3 and hybrid formatting'
@@ -361,17 +358,44 @@ def validate_args(args, defaults={}):
     if not args.add_bias_linear:
         args.bias_gelu_fusion = False
 
-    # Load retro args.
-    if args.retro_workdir:
+    # Retro checks.
+    if args.retro_add_retriever:
+
+        # Sequence parallelism unsupported.
+        assert not args.sequence_parallel, \
+            "retro currently does not support sequence parallelism."
+
+        # Pipeline parallelism unsupported.
+        assert args.pipeline_model_parallel_size == 1, \
+            "retro currently does not support pipeline parallelism."
+
+        # Load retro args.
         retro_args_path = get_retro_args_path(args.retro_workdir)
-        if os.path.exists(retro_args_path):
-            with open(retro_args_path) as f:
-                retro_args = types.SimpleNamespace(**json.load(f))
-                retro_args.retro_return_doc_ids = args.retro_return_doc_ids
-                retro_args.retro_gpt_retrieved_length = \
-                    args.retro_num_retrieved_chunks * \
-                    retro_args.retro_gpt_chunk_length
-                set_retro_args(retro_args)
+        assert os.path.exists(retro_args_path), "retro workdir missing args.json"
+        with open(retro_args_path) as f:
+            retro_args = types.SimpleNamespace(**json.load(f))
+            retro_args.retro_return_doc_ids = args.retro_return_doc_ids
+            retro_args.retro_gpt_retrieved_length = \
+                args.retro_num_retrieved_chunks * \
+                retro_args.retro_gpt_chunk_length
+            set_retro_args(retro_args)
+
+    # Legacy RoPE arguments
+    if args.use_rotary_position_embeddings:
+        args.position_embedding_type = PositionEmbeddingType.rope
+
+    if (
+            not args.add_position_embedding
+            and args.position_embedding_type is PositionEmbeddingType.learned_absolute
+    ):
+        print(
+            'WARNING: Using deprecated `--no-position-embedding` argument '
+            'with --position_embedding_type=learned_absolute. Automatically '
+            'setting `--position_embedding_type=nope`. Please remove '
+            '`--no-position-embedding` and add '
+            '`--position-embedding-type=nope` for forward-compatibility.'
+        )
+        args.position_embedding_type = PositionEmbeddingType.nope
 
     # Print arguments.
     _print_args("arguments", args)
@@ -416,9 +440,20 @@ def core_transformer_config_from_args(args):
         kw_args['activation_func'] = F.silu
         kw_args['gated_linear_unit'] = True
         kw_args['bias_gelu_fusion'] = False
+    if args.t5_swiglu:
+        kw_args['activation_func'] = torch.nn.Identity()
+        kw_args['t5_gated_linear_unit'] = True
+        kw_args['bias_gelu_fusion'] = False
     if args.init_method_xavier_uniform:
         kw_args['init_method'] = torch.nn.init.xavier_uniform_
         kw_args['scaled_init_method'] = torch.nn.init.xavier_uniform_
+    kw_args['fp8'] = args.fp8_e4m3 or args.fp8_hybrid
+    kw_args['fp8_e4m3'] = args.fp8_e4m3
+    kw_args['fp8_margin'] = args.fp8_hybrid
+    if args.group_query_attention:
+        kw_args['num_query_groups'] = args.num_query_groups
+    else:
+        kw_args['num_query_groups'] = None
 
     return TransformerConfig(**kw_args)
 
@@ -446,6 +481,10 @@ def _add_transformer_engine_args(parser):
                        choices=['most_recent', 'max'],
                        help='Algorithm for computing amax from history',
                        dest='fp8_amax_compute_algo')
+    group.add_argument('--normalization', default='LayerNorm',
+                       choices=['LayerNorm', 'RMSNorm'],
+                       help='Which normalization technique to use.',
+                       dest='normalization')
 
     return parser
 
@@ -542,22 +581,28 @@ def _add_network_size_args(parser):
                        'attention. This is set to '
                        '   args.hidden_size // args.num_attention_heads '
                        'if not provided.')
+    group.add_argument('--group-query-attention', action='store_true',
+                          help='Use group-query attention.')
+    group.add_argument('--num-query-groups', type=int, default=1)
+
     group.add_argument('--max-position-embeddings', type=int, default=None,
                        help='Maximum number of position embeddings to use. '
                        'This is the size of position embedding.')
     group.add_argument('--position-embedding-type',
                        type=lambda x: PositionEmbeddingType[x],
                        choices=list(PositionEmbeddingType),
-                       default=PositionEmbeddingType.none,
-                       help='Define position embedding type, which is added '
-                       'in addition to the learned embedding'
-                       '("none" | "alibi" | "rotary"). '
-                       '"none" by default.)')
+                       default=PositionEmbeddingType.learned_absolute,
+                       help='Position embedding type.')
+    group.add_argument('--use-rotary-position-embeddings', action='store_true',
+                       help='Use rotary positional embeddings or not. '
+                       'Deprecated: use --position-embedding-type')
     group.add_argument('--rotary-percent', type=float, default=1.0,
                        help='Percent of rotary dimension to use, default 100%')
+    group.add_argument('--rotary-seq-len-interpolation-factor', type=int, default=None,
+                       help='Sequence length interpolation factor for rotary embeddings.')
     group.add_argument('--no-position-embedding',
                        action='store_false',
-                       help='Disable position embedding.',
+                       help='Disable position embedding. Deprecated: use --position-embedding-type',
                        dest='add_position_embedding')
     group.add_argument('--make-vocab-size-divisible-by', type=int, default=128,
                        help='Pad the vocab size to be divisible by this value.'
@@ -579,6 +624,11 @@ def _add_network_size_args(parser):
                        help='Use squared relu activation instead of default gelu')
     group.add_argument('--swiglu', action='store_true',
                        help='Use gated linear units and SiLU activation instead of default gelu')
+    group.add_argument('--t5-swiglu', action='store_true',
+                       help='Use correctly implemented gated linear units and '
+                       'SiLU activation instead of the default GELU. '
+                       '`--ffn-hidden-size` will not automatically be '
+                       'adjusted to normalize the parameter count.')
     group.add_argument('--onnx-safe', type=bool, required=False,
                        help='Use workarounds for known problems with '
                        'Torch ONNX exporter')
@@ -683,11 +733,32 @@ def _add_regularization_args(parser):
     group.add_argument('--adam-beta2', type=float, default=0.999,
                        help='Second coefficient for computing running averages '
                        'of gradient and its square')
-    group.add_argument('--adam-eps', type=float, default=1e-08,
+    group.add_argument('--adam-eps', '--adan-eps', type=float, default=1e-08,
                        help='Term added to the denominator to improve'
                        'numerical stability')
     group.add_argument('--sgd-momentum', type=float, default=0.9,
                        help='Momentum factor for sgd')
+    group.add_argument('--adan-beta1', type=float, default=0.98,
+                       help='First coefficient for computing running averages '
+                       'of gradient, its difference, and Nesterov velocity')
+    group.add_argument('--adan-beta2', type=float, default=0.92,
+                       help='Second coefficient for computing running averages '
+                       'of gradient, its difference, and Nesterov velocity')
+    group.add_argument('--adan-beta3', type=float, default=0.99,
+                       help='Third coefficient for computing running averages '
+                       'of gradient, its difference, and Nesterov velocity')
+    group.add_argument('--adan-no-prox', action='store_true',
+                       help='Whether to use AdamW-like Adan '
+                       '(if `--adan-no-prox` is given) or whether to use the '
+                       'variant used in Adan paper experiments (default).')
+    group.add_argument('--adan-no-foreach', action='store_false',
+                       help='Whether to use PyTorch-internal functions for '
+                       'performance. Faster but consumes more memory.',
+                       dest='adan_foreach')
+    group.add_argument('--adan-no-fused', action='store_false',
+                       help='Whether to use fused Adan for decreased memory '
+                       'requirements and increased throughput.',
+                       dest='adan_fused')
 
     return parser
 
@@ -750,6 +821,20 @@ def _add_training_args(parser):
                        'uniformly divided recompute unit, '
                        '2) block: the number of individual Transformer layers '
                        'to recompute within each pipeline stage.')
+    group.add_argument('--profile', action='store_true',
+                       help='Enable nsys profiling. When using this option, nsys '
+                       'options should be specified in commandline. An example '
+                       'nsys commandline is `nsys profile -s none -t nvtx,cuda '
+                       '-o <path/to/output_file> --force-overwrite true '
+                       '--capture-range=cudaProfilerApi '
+                       '--capture-range-end=stop`.')
+    group.add_argument('--profile-step-start', type=int, default=10,
+                       help='Gloable step to start profiling.')
+    group.add_argument('--profile-step-end', type=int, default=12,
+                       help='Gloable step to stop profiling.')
+    group.add_argument('--profile-ranks', nargs='+', type=int, default=[0],
+                       help='Global ranks to profile.')
+
 
     # deprecated
     group.add_argument('--checkpoint-activations', action='store_true',
@@ -793,7 +878,7 @@ def _add_training_args(parser):
                        help='Disable bias in the linear layers',
                        dest='add_bias_linear')
     group.add_argument('--optimizer', type=str, default='adam',
-                       choices=['adam', 'sgd'],
+                       choices=['adam', 'sgd', 'adan'],
                        help='Optimizer function')
     group.add_argument('--dataloader-type', type=str, default=None,
                        choices=['single', 'cyclic'],

@@ -18,9 +18,10 @@ class AttnMaskType(enum.Enum):
     causal = 2
 
 class PositionEmbeddingType(enum.Enum):
-    none = 1
+    learned_absolute = 1
+    rope = 3
     alibi = 2
-    rotary = 3
+    nope = 4
 
 # For backward compatibility with old model checkpoints
 from megatron.core.enums import ModelType

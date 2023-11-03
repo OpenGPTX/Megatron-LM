@@ -334,7 +334,7 @@ class DistributedOptimizer(MixedPrecisionOptimizer):
                                     'torch.cuda.FloatTensor,  '
                                     'torch.cuda.HalfTensor, or '
                                     'torch.cuda.BFloat16Tensor. '
-                                    'Received {}'.format(param.type()))
+                                    'Received {}'.format(model_param.type()))
 
             # Update optimizer's params.
             group_range["orig_group"]["params"] = [
@@ -372,8 +372,17 @@ class DistributedOptimizer(MixedPrecisionOptimizer):
         # Verify that contiguous buffers are being used.
         # - Note: this should already be checked in arguments.py.
         assert use_contiguous_buffers_in_local_ddp
-        assert isinstance(optimizer, Adam), \
-            "Only Adam currently supported, due to checkpointing requirements."
+
+        try:
+            from adan import Adan
+            self._is_adan = isinstance(optimizer, Adan)
+        except ImportError:
+            self._is_adan = False
+
+        assert self._is_adan or isinstance(optimizer, Adam), (
+            "Only Adam or Adan currently supported, due to checkpointing "
+            "requirements."
+        )
 
         # Model grad buffer ranges.
         self.model_gbuf_ranges = []
@@ -386,7 +395,7 @@ class DistributedOptimizer(MixedPrecisionOptimizer):
         self.model_param_group_index_map, self.opt_group_ranges = \
             self.build_optimizer_group_ranges(self.optimizer.param_groups,
                                               self.model_gbuf_ranges)
-        
+
         # Allocate main param shards.
         (
             self.model_float16_groups,
@@ -543,6 +552,8 @@ class DistributedOptimizer(MixedPrecisionOptimizer):
                         "exp_avg" : init_shard(),
                         "exp_avg_sq" : init_shard(),
                     }))
+                    if self._is_adan:
+                        state_dict_state[-1][1]["exp_avg_diff"] = init_shard()
 
         # Sort by state order (see method docstring for details).
         state_dict_state.sort(key = lambda s : s[0])
@@ -602,7 +613,14 @@ class DistributedOptimizer(MixedPrecisionOptimizer):
                 local_shards = {key:torch.empty((gbuf_local_numel,),
                                              dtype=torch.float32,
                                              device="cpu")
-                             for key in ("param", "exp_avg", "exp_avg_sq")}
+                                for key in (
+                                        ("param", "exp_avg", "exp_avg_sq")
+                                        + (
+                                            ("exp_avg_diff",)
+                                            if self._is_adan
+                                            else ()
+                                        )
+                                )}
 
                 # Build contiguous DP rank shards (for param + optim states).
                 for model_param, param_range_map in \
@@ -630,7 +648,7 @@ class DistributedOptimizer(MixedPrecisionOptimizer):
                 # Gather contiguous shards on DP rank 0.
                 world_tensors = {}
                 for key, send_tensor in local_shards.items():
-                    
+
                     # Gather tensor list.
                     if data_parallel_rank == 0:
                         recv_tensors = [torch.empty((gbuf_local_numel,),
@@ -696,11 +714,18 @@ class DistributedOptimizer(MixedPrecisionOptimizer):
                 local_shards = {key:torch.empty((gbuf_local_numel,),
                                                 dtype=torch.float32,
                                                 device="cpu")
-                                for key in ("param", "exp_avg", "exp_avg_sq")}
+                                for key in (
+                                        ("param", "exp_avg", "exp_avg_sq")
+                                        + (
+                                            ("exp_avg_diff",)
+                                            if self._is_adan
+                                            else ()
+                                        )
+                                )}
 
                 # Scatter local shards from DP rank 0.
                 for key, recv_tensor in local_shards.items():
-                    
+
                     # Scatter tensor list.
                     if data_parallel_rank == 0:
                         world_tensor = loaded_state[model_idx][dtype][key]
@@ -855,6 +880,7 @@ class DistributedOptimizer(MixedPrecisionOptimizer):
             )
 
         timers('grads-reduce-scatter').stop()
+
 
 
     def gather_model_params(self, args, timers):
