@@ -503,7 +503,7 @@ class TritonFlashSelfAttention(torch.nn.Module):
         assert triton_flash_attn is not None and self.has_mask_support(), (
             'Please install `triton` with support for FlashAttention with '
             'attention masks first, e.g., with `pip install '
-            'git+https://github.com/janEbert/triton.git@attn-mask`.'
+            'git+https://github.com/janEbert/triton.git@attn-mask#subdirectory=python`.'
         )
         assert rearrange is not None, \
             'Please install `einops` first, e.g., with `pip install einops`.'
