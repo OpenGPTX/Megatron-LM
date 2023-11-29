@@ -953,15 +953,15 @@ def evaluate(forward_step_func,
                 for loss_dict in loss_dicts:
                     for key in loss_dict:
                         if args.loss_file:
-                            if key == 'lm loss':
+                            if key == 'non reduced lm loss':
                                 losses.append((idx, str(float(loss_dict[key]))))
-                                # if len(losses) > 1000:
-                                if len(losses) >= 10:
+                                if len(losses) >= 10000:
                                     write_to_loss_file(losses)
                                     losses = []
 
-                        total_loss_dict[key] = total_loss_dict.get(
-                            key, torch.cuda.FloatTensor([0.0])) + loss_dict[key]
+                        if key != 'non reduced lm loss':
+                            total_loss_dict[key] = total_loss_dict.get(
+                                key, torch.cuda.FloatTensor([0.0])) + loss_dict[key]
 
             args.consumed_valid_samples += eval_batch_size
         
