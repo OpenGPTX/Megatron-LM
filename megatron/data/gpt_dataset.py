@@ -21,6 +21,7 @@ def build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
                                     train_valid_test_num_samples,
                                     seq_length, seed, skip_warmup,
                                     train_doc_idx_path=None,
+                                    valid_sample_idx_path=None,
                                     train_data_prefix=None,
                                     valid_data_prefix=None,
                                     test_data_prefix=None,
@@ -37,7 +38,7 @@ def build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
                                                     data_impl, splits_string,
                                                     train_valid_test_num_samples,
                                                     seq_length, seed, skip_warmup,
-                                                    train_doc_idx_path,
+                                                    train_doc_idx_path, valid_sample_idx_path,
                                                     data_cache_path=data_cache_path)
 
         # Blending dataset.
@@ -95,7 +96,7 @@ def build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
                                           splits_string,
                                           train_valid_test_num_samples[0],
                                           seq_length, seed, skip_warmup,
-                                          train_doc_idx_path,
+                                          doc_idx_path=train_doc_idx_path,
                                           data_cache_path=data_cache_path)
 
         if valid_data_prefix is not None:
@@ -103,8 +104,8 @@ def build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
                                           splits_string,
                                           train_valid_test_num_samples[1],
                                           seq_length, seed, False,
+                                          sample_idx_path=valid_sample_idx_path,
                                           data_cache_path=data_cache_path)
-
 
         if test_data_prefix is not None:
             test_dataset = build_dataset("test", test_data_prefix, data_impl,
@@ -119,7 +120,7 @@ def build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
 def _build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
                                      train_valid_test_num_samples,
                                      seq_length, seed, skip_warmup,
-                                     train_doc_idx_path,
+                                     train_doc_idx_path, valid_sample_idx_path,
                                      return_doc_ids=False, *,
                                      data_cache_path=None):
     """Build train, valid, and test datasets."""
@@ -144,7 +145,7 @@ def _build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
     print_split_stats('validation', 1)
     print_split_stats('test', 2)
 
-    def build_dataset(index, name, doc_idx_path=None):
+    def build_dataset(index, name, doc_idx_path=None, sample_idx_path=None):
         dataset = None
         if splits[index + 1] > splits[index]:
             documents = np.arange(start=splits[index], stop=splits[index + 1],
@@ -153,13 +154,13 @@ def _build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
                                  splits_string,
                                  train_valid_test_num_samples[index],
                                  seq_length, seed,
-                                 doc_idx_path,
+                                 doc_idx_path, sample_idx_path,
                                  return_doc_ids,
                                  data_cache_path=data_cache_path)
         return dataset
 
-    train_dataset = build_dataset(0, 'train', train_doc_idx_path)
-    valid_dataset = build_dataset(1, 'valid')
+    train_dataset = build_dataset(0, 'train', doc_idx_path=train_doc_idx_path)
+    valid_dataset = build_dataset(1, 'valid', sample_idx_path=valid_sample_idx_path)
     test_dataset = build_dataset(2, 'test')
 
     return (train_dataset, valid_dataset, test_dataset)
@@ -169,6 +170,7 @@ def build_dataset(dataset_name, data_prefix, data_impl,
                   splits_string, num_samples,
                   seq_length, seed, skip_warmup,
                   doc_idx_path=None,
+                  sample_idx_path=None,
                   *,
                   data_cache_path=None):
     dataset = None
@@ -176,7 +178,7 @@ def build_dataset(dataset_name, data_prefix, data_impl,
         dataset = _build_dataset(dataset_name, data_prefix[0], data_impl,
                                  splits_string, num_samples, seq_length,
                                  seed, skip_warmup,
-                                 doc_idx_path,
+                                 doc_idx_path, sample_idx_path,
                                  data_cache_path=data_cache_path)
     else:
         # Blending dataset.
@@ -205,6 +207,7 @@ def build_dataset(dataset_name, data_prefix, data_impl,
 def _build_dataset(dataset_name, data_prefix, data_impl, splits_string,
                    num_samples, seq_length, seed, skip_warmup,
                    doc_idx_path=None,
+                   sample_idx_path=None,
                    *,
                    data_cache_path=None):
     """
@@ -228,7 +231,7 @@ def _build_dataset(dataset_name, data_prefix, data_impl, splits_string,
 
     dataset = GPTDataset(dataset_name, data_prefix, documents, indexed_dataset,
                          splits_string, num_samples, seq_length, seed,
-                         doc_idx_path,
+                         doc_idx_path, sample_idx_path,
                          data_cache_path=data_cache_path)
 
     return dataset
@@ -255,6 +258,7 @@ class GPTDataset(torch.utils.data.Dataset):
     def __init__(self, name, data_prefix, documents, indexed_dataset,
                  splits_string, num_samples, seq_length, seed,
                  doc_idx_path=None,
+                 sample_idx_path=None,
                  return_doc_ids=False, *,
                  data_cache_path=None):
 
@@ -271,7 +275,7 @@ class GPTDataset(torch.utils.data.Dataset):
             _build_index_mappings(self.name, data_prefix,
                                   documents, self.indexed_dataset.sizes,
                                   splits_string, num_samples, seq_length, seed,
-                                  doc_idx_path,
+                                  doc_idx_path, sample_idx_path,
                                   data_cache_path=data_cache_path)
 
 
@@ -315,12 +319,12 @@ class GPTDataset(torch.utils.data.Dataset):
             return {'text': np.array(sample, dtype=np.int64),
                     'doc_ids': np.array(doc_ids, dtype=np.int64)}
         else:
-            return {'text': np.array(sample, dtype=np.int64)}
+            return {'text': np.array(sample, dtype=np.int64), 'idx': np.int64(idx)}
 
 
 def _build_index_mappings(name, data_prefix, documents, sizes,
                           splits_string, num_samples, seq_length, seed,
-                          doc_idx_path,
+                          doc_idx_path, sample_idx_path=None,
                           *,
                           data_cache_path):
     """Build doc-idx, sample-idx, and shuffle-idx.
@@ -364,7 +368,7 @@ def _build_index_mappings(name, data_prefix, documents, sizes,
             'sample': os.path.join(prefix, sample_idx_filename),
             'shuffle': os.path.join(prefix, shuffle_idx_filename)
         }
-        if not doc_idx_path:
+        if not (doc_idx_path or sample_idx_path):
             for f in idx_path.values():
                 if not os.path.isfile(f):
                     break
@@ -447,11 +451,17 @@ def _build_index_mappings(name, data_prefix, documents, sizes,
             from megatron.data import helpers
             assert doc_idx.dtype == np.int32
             assert sizes.dtype == np.int32
-            sample_idx = helpers.build_sample_idx(sizes, doc_idx, seq_length,
-                                                  num_epochs, tokens_per_epoch)
-            np.save(idx_path['sample'], sample_idx, allow_pickle=True)
-            print_rank_0(' > elapsed time to build and save sample-idx mapping '
-                         '(seconds): {:4f}'.format(time.time() - start_time))
+            if sample_idx_path:
+                sample_idx_filename = sample_idx_path
+                sample_idx = np.load(sample_idx_filename, allow_pickle=True, mmap_mode='r')
+                print_rank_0(f' > use predefined sample-idx in {sample_idx_path} instead of building a new one')
+                shuffle_samples = False
+            else:
+                sample_idx = helpers.build_sample_idx(sizes, doc_idx, seq_length,
+                                                      num_epochs, tokens_per_epoch)
+                np.save(idx_path['sample'], sample_idx, allow_pickle=True)
+                print_rank_0(' > elapsed time to build and save sample-idx mapping '
+                             '(seconds): {:4f}'.format(time.time() - start_time))
             # shuffle-idx.
             start_time = time.time()
             # -1 is due to data structure used to retieve the index:
@@ -486,6 +496,9 @@ def _build_index_mappings(name, data_prefix, documents, sizes,
     start_time = time.time()
     if doc_idx_path:
         idx_path['doc'] = doc_idx_path
+
+    if sample_idx_path:
+        idx_path['sample'] = sample_idx_path
     print_rank_0(f" > loading doc-idx mapping from {idx_path['doc']}")
     doc_idx = np.load(idx_path['doc'], allow_pickle=True, mmap_mode='r')
 

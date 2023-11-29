@@ -6,6 +6,7 @@ import argparse
 import dataclasses
 import json
 import os
+from pathlib import Path
 import torch
 import types
 
@@ -15,6 +16,7 @@ from megatron.model.enums import PositionEmbeddingType
 from tools.retro.utils import get_args_path as get_retro_args_path
 
 from megatron.core.transformer import TransformerConfig
+
 
 def parse_args(extra_args_provider=None, ignore_unknown_args=False):
     """Parse all arguments."""
@@ -55,6 +57,7 @@ def parse_args(extra_args_provider=None, ignore_unknown_args=False):
     args.world_size = int(os.getenv("WORLD_SIZE", '1'))
 
     return args
+
 
 def validate_args(args, defaults={}):
     # Tensor model parallel size.
@@ -397,6 +400,11 @@ def validate_args(args, defaults={}):
         )
         args.position_embedding_type = PositionEmbeddingType.nope
 
+    if args.loss_file:
+        args.loss_file = Path(args.loss_file)
+        args.loss_file.unlink(missing_ok=True)
+        args.loss_file.touch()
+
     # Print arguments.
     _print_args("arguments", args)
     retro_args = get_retro_args()
@@ -702,6 +710,8 @@ def _add_logging_args(parser):
     group.add_argument('--log-world-size-to-tensorboard',
                        action='store_true',
                        help='Enable world size logging to tensorboard.')
+    group.add_argument('--loss-file', type=str, default=None,
+                       help='Save loss per document to this file.')
 
     return parser
 
@@ -1160,7 +1170,8 @@ def _add_data_args(parser):
                        help='Path to a directory to hold cached index files.')
     group.add_argument('--train-doc-idx-path', default=None,
                        help='Path to a file containing an index to use instead of random shuffling for training data.')
-
+    group.add_argument('--valid-sample-idx-path', default=None,
+                       help='Path to a file containing an index to use instead of random shuffling for valid data.')
     group.add_argument('--vocab-size', type=int, default=None,
                        help='Size of vocab before EOD or padding.')
     group.add_argument('--vocab-file', type=str, default=None,

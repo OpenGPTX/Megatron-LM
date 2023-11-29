@@ -41,7 +41,7 @@ def get_batch(data_iterator):
     tokenizer = get_tokenizer()
 
     # Items and their type.
-    keys = ['text']
+    keys = ['text', 'idx']
     datatype = torch.int64
 
     # Broadcast data.
@@ -55,6 +55,7 @@ def get_batch(data_iterator):
     tokens_ = data_b['text'].long()
     labels = tokens_[:, 1:].contiguous()
     tokens = tokens_[:, :-1].contiguous()
+    idx = int(data_b['idx'])
 
     # Get the masks and postition ids.
     attention_mask, loss_mask, position_ids = get_ltor_masks_and_position_ids(
@@ -64,7 +65,8 @@ def get_batch(data_iterator):
         args.reset_attention_mask,
         args.eod_mask_loss)
 
-    return tokens, labels, loss_mask, attention_mask, position_ids
+    return tokens, labels, loss_mask, attention_mask, position_ids, idx
+
 
 def loss_func(loss_mask, output_tensor):
     losses = output_tensor.float()
@@ -84,14 +86,14 @@ def forward_step(data_iterator, model):
 
     # Get the batch.
     timers('batch-generator', log_level=2).start()
-    tokens, labels, loss_mask, attention_mask, position_ids = get_batch(
+    tokens, labels, loss_mask, attention_mask, position_ids, idx = get_batch(
         data_iterator)
     timers('batch-generator').stop()
 
     output_tensor = model(tokens, position_ids, attention_mask,
                           labels=labels)
 
-    return output_tensor, partial(loss_func, loss_mask)
+    return output_tensor, partial(loss_func, loss_mask), idx
 
 
 def train_valid_test_datasets_provider(train_val_test_num_samples):
@@ -112,7 +114,9 @@ def train_valid_test_datasets_provider(train_val_test_num_samples):
         valid_data_prefix=args.valid_data_path,
         test_data_prefix=args.test_data_path,
         data_cache_path=args.data_cache_path,
-        train_doc_idx_path=args.train_doc_idx_path)
+        train_doc_idx_path=args.train_doc_idx_path,
+        valid_sample_idx_path=args.valid_sample_idx_path
+    )
     print_rank_0("> finished creating GPT datasets ...")
 
     return train_ds, valid_ds, test_ds

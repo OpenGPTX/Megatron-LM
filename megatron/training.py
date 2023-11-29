@@ -431,7 +431,7 @@ def train_step(forward_step_func, data_iterator,
     if args.timing_log_level < 2:
         config.timers = None
 
-    losses_reduced = forward_backward_func(
+    losses_reduced, idx = forward_backward_func(
         forward_step_func=forward_step_func,
         data_iterator=data_iterator,
         model=model,
@@ -494,13 +494,13 @@ def train_step(forward_step_func, data_iterator,
         for key in losses_reduced[0]:
             losses_reduced_for_key = [x[key] for x in losses_reduced]
             loss_reduced[key] = sum(losses_reduced_for_key) / len(losses_reduced_for_key)
-        return loss_reduced, skipped_iter, grad_norm, num_zeros_in_grad
-    return {}, skipped_iter, grad_norm, num_zeros_in_grad
+        return loss_reduced, skipped_iter, grad_norm, num_zeros_in_grad, idx
+    return {}, skipped_iter, grad_norm, num_zeros_in_grad, idx
 
 
 def training_log(loss_dict, total_loss_dict, learning_rate, iteration,
                  loss_scale, report_memory_flag, skipped_iter,
-                 grad_norm, params_norm, num_zeros_in_grad):
+                 grad_norm, params_norm, num_zeros_in_grad, losses, idx):
     """Log training information such as losses, timing, ...."""
     args = get_args()
     timers = get_timers()
@@ -524,6 +524,13 @@ def training_log(loss_dict, total_loss_dict, learning_rate, iteration,
     got_nan = False
     for key in loss_dict:
         if not skipped_iter:
+            if args.loss_file:
+                if key == 'lm loss':
+                    losses.append((idx, str(float(loss_dict[key]))))
+                    # if len(losses) > 1000:
+                    if len(losses) > 10:
+                        write_to_loss_file(losses)
+                        losses = []
             total_loss_dict[key] = total_loss_dict.get(
                 key, torch.cuda.FloatTensor([0.0])) + loss_dict[key]
         else:
@@ -774,6 +781,7 @@ def train(forward_step_func, model, optimizer, opt_param_scheduler,
 
     # Tracking loss.
     total_loss_dict = {}
+    losses = []
 
     # Iterations.
     iteration = args.iteration
@@ -794,7 +802,7 @@ def train(forward_step_func, model, optimizer, opt_param_scheduler,
 
         update_num_microbatches(args.consumed_train_samples)
         args.curr_iteration = iteration
-        loss_dict, skipped_iter, grad_norm, num_zeros_in_grad = \
+        loss_dict, skipped_iter, grad_norm, num_zeros_in_grad, idx = \
             train_step(forward_step_func,
                        train_data_iterator,
                        model,
@@ -815,7 +823,8 @@ def train(forward_step_func, model, optimizer, opt_param_scheduler,
                                           optimizer.param_groups[0]['lr'],
                                           iteration, loss_scale,
                                           report_memory_flag, skipped_iter,
-                                          grad_norm, params_norm, num_zeros_in_grad)
+                                          grad_norm, params_norm, num_zeros_in_grad,
+                                          losses, idx)
 
         # Autoresume
         if args.adlr_autoresume and \
@@ -877,7 +886,15 @@ def train(forward_step_func, model, optimizer, opt_param_scheduler,
            torch.distributed.get_rank() in args.profile_ranks:
             torch.cuda.cudart().cudaProfilerStop()
 
+    write_to_loss_file(losses)
+
     return iteration
+
+
+def write_to_loss_file(losses):
+    args = get_args()
+    with args.loss_file.open('a') as f:
+        f.write("\n".join(",".join([str(idx), loss]) for idx, loss in losses) + "\n")
 
 
 def evaluate(forward_step_func,
@@ -897,6 +914,7 @@ def evaluate(forward_step_func,
         model_module.eval()
 
     total_loss_dict = {}
+    losses = []
 
     # make validation batch size independent from training batch size
     eval_batch_size = args.global_batch_size
@@ -915,7 +933,7 @@ def evaluate(forward_step_func,
             forward_backward_func = get_forward_backward_func()
             # Don't care about timing during evaluation
             config.timers = None
-            loss_dicts = forward_backward_func(
+            loss_dicts, idx = forward_backward_func(
                 forward_step_func=forward_step_func,
                 data_iterator=data_iterator,
                 model=model,
@@ -934,6 +952,14 @@ def evaluate(forward_step_func,
                 # Reduce across processes.
                 for loss_dict in loss_dicts:
                     for key in loss_dict:
+                        if args.loss_file:
+                            if key == 'lm loss':
+                                losses.append((idx, str(float(loss_dict[key]))))
+                                # if len(losses) > 1000:
+                                if len(losses) >= 10:
+                                    write_to_loss_file(losses)
+                                    losses = []
+
                         total_loss_dict[key] = total_loss_dict.get(
                             key, torch.cuda.FloatTensor([0.0])) + loss_dict[key]
 
@@ -951,6 +977,9 @@ def evaluate(forward_step_func,
                 decoder_seq_length=args.decoder_seq_length,
                 forward_only=True,
                 collect_non_loss_data=True)
+
+    if args.loss_file:
+        write_to_loss_file(losses)
 
     # Move model back to the train mode.
     for model_module in model:
@@ -1078,7 +1107,10 @@ def build_train_valid_test_data_loaders(
         # Flags to know if we need to do training/validation/testing.
         do_train = train_dataloader is not None and args.train_iters > 0
         do_valid = valid_dataloader is not None and args.eval_iters > 0
-        do_test = test_dataloader is not None and args.eval_iters > 0
+        if args.loss_file:
+            do_test = False
+        else:
+            do_test = test_dataloader is not None and args.eval_iters > 0
         # Need to broadcast num_tokens and num_type_tokens.
         flags = torch.cuda.LongTensor(
             [int(do_train), int(do_valid), int(do_test)])

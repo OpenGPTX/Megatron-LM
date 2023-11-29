@@ -182,9 +182,9 @@ def forward_step(
         context_manager = contextlib.nullcontext()
     with context_manager:
         if checkpoint_activations_microbatch is None:
-            output_tensor, loss_func = forward_step_func(data_iterator, model)
+            output_tensor, loss_func, idx = forward_step_func(data_iterator, model)
         else:
-            output_tensor, loss_func = forward_step_func(
+            output_tensor, loss_func, idx = forward_step_func(
                 data_iterator, model, checkpoint_activations_microbatch
             )
 
@@ -209,10 +209,10 @@ def forward_step(
         parallel_state.is_pipeline_stage_after_split()
         and model_type == ModelType.encoder_and_decoder
     ):
-        return [output_tensor, input_tensor[-1]]
+        return [output_tensor, input_tensor[-1]], idx
     if unwrap_output_tensor:
-        return output_tensor
-    return [output_tensor]
+        return output_tensor, idx
+    return [output_tensor], idx
 
 
 def backward_step(input_tensor, output_tensor, output_tensor_grad, model_type, config):
@@ -326,7 +326,7 @@ def forward_backward_no_pipelining(
     input_tensor, output_tensor_grad = None, None
     with no_sync_func():
         for i in range(num_microbatches - 1):
-            output_tensor = forward_step(
+            output_tensor, idx = forward_step(
                 forward_step_func,
                 data_iterator,
                 model,
@@ -341,7 +341,7 @@ def forward_backward_no_pipelining(
 
     # Run computation for last microbatch out of context handler (want to
     # synchronize gradients).
-    output_tensor = forward_step(
+    output_tensor, idx = forward_step(
         forward_step_func,
         data_iterator,
         model,
@@ -355,7 +355,7 @@ def forward_backward_no_pipelining(
     if not forward_only:
         backward_step(input_tensor, output_tensor, output_tensor_grad, model_type, config)
 
-    return forward_data_store
+    return forward_data_store, idx
 
 
 def forward_backward_pipelining_with_interleaving(
