@@ -405,6 +405,13 @@ def validate_args(args, defaults={}):
         args.loss_file.unlink(missing_ok=True)
         args.loss_file.touch()
 
+    if args.index_path_file:
+        args.index_path_file = Path(args.index_path_file)
+        if not args.index_path_file.exists():
+            raise ValueError(f"Index path file {args.index_path_file} does not exist")
+        with args.index_path_file.open('r') as f:
+            args.index_paths = json.load(f)
+
     # Print arguments.
     _print_args("arguments", args)
     retro_args = get_retro_args()
@@ -1172,6 +1179,8 @@ def _add_data_args(parser):
                        help='Path to a file containing an index to use instead of random shuffling for training data.')
     group.add_argument('--valid-sample-idx-path', default=None,
                        help='Path to a file containing an index to use instead of random shuffling for valid data.')
+    group.add_argument('--index-path-file', default=None,
+                       help='JSON file containing paths to indices to use.')
     group.add_argument('--vocab-size', type=int, default=None,
                        help='Size of vocab before EOD or padding.')
     group.add_argument('--vocab-file', type=str, default=None,

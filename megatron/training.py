@@ -886,7 +886,8 @@ def train(forward_step_func, model, optimizer, opt_param_scheduler,
            torch.distributed.get_rank() in args.profile_ranks:
             torch.cuda.cudart().cudaProfilerStop()
 
-    write_to_loss_file(losses)
+    if args.loss_file:
+        write_to_loss_file(losses)
 
     return iteration
 

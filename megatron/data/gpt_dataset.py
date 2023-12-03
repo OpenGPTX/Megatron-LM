@@ -9,7 +9,7 @@ import time
 import numpy as np
 import torch
 
-from megatron import print_rank_0
+from megatron import print_rank_0, get_args
 from megatron.core import mpu
 from megatron.data.blendable_dataset import BlendableDataset
 from megatron.data.dataset_utils import get_datasets_weights_and_num_samples
@@ -376,11 +376,26 @@ def _build_index_mappings(name, data_prefix, documents, sizes,
                 # Found our files!
                 build_indices = False
                 break
+
+    # check for custom indices
+    args = get_args()
+    use_custom_idx = {
+        'doc': False,
+        'sample': False,
+        'shuffle': False,
+    }
+    if args.index_paths:
+        build_indices = True
+        if name in args.index_paths:
+            for key in ['doc', 'sample', 'shuffle']:
+                if key in args.index_paths[name]:
+                    use_custom_idx[key] = True
+                    idx_path[key] = args.index_paths[name][key]
+
     data_cache_dir = os.path.dirname(idx_path['desc'])
     data_cache_success = True
 
     # Build the indexed mapping if not exist.
-    print(f"{num_epochs=}")
     if build_indices and torch.distributed.get_rank() == 0:
         print_rank_0(' > WARNING: could not find index map files, building '
                      'the indices on rank 0 ...')
@@ -432,10 +447,10 @@ def _build_index_mappings(name, data_prefix, documents, sizes,
                 fd.write(desc)
 
             # doc-idx.
-            if doc_idx_path:
+            if use_custom_idx['doc']:
                 doc_idx_filename = doc_idx_path
-                doc_idx = np.load(doc_idx_filename, allow_pickle=True, mmap_mode='r')
-                print_rank_0(f' > use predefined doc-idx in {doc_idx_path} instead of building a new one')
+                doc_idx = np.load(idx_path['doc'], allow_pickle=True, mmap_mode='r')
+                print_rank_0(f' > use predefined doc-idx in {idx_path["doc"]} instead of building a new one')
                 shuffle_samples = False
             else:
                 start_time = time.time()
@@ -452,10 +467,10 @@ def _build_index_mappings(name, data_prefix, documents, sizes,
             from megatron.data import helpers
             assert doc_idx.dtype == np.int32
             assert sizes.dtype == np.int32
-            if sample_idx_path:
+            if use_custom_idx['sample']:
                 sample_idx_filename = sample_idx_path
-                sample_idx = np.load(sample_idx_filename, allow_pickle=True, mmap_mode='r')
-                print_rank_0(f' > use predefined sample-idx in {sample_idx_path} instead of building a new one')
+                sample_idx = np.load(idx_path['sample'], allow_pickle=True, mmap_mode='r')
+                print_rank_0(f' > use predefined sample-idx in {idx_path["sample"]} instead of building a new one')
                 shuffle_samples = False
             else:
                 sample_idx = helpers.build_sample_idx(sizes, doc_idx, seq_length,
@@ -471,11 +486,16 @@ def _build_index_mappings(name, data_prefix, documents, sizes,
                 num_samples_ = num_samples_from_epochs_minus_one
             else:
                 num_samples_ = sample_idx.shape[0] - 1
-            shuffle_idx = _build_shuffle_idx(num_samples_,
-                                             sample_idx.shape[0] - 1, np_rng, shuffle_samples)
-            np.save(idx_path['shuffle'], shuffle_idx, allow_pickle=True)
-            print_rank_0(' > elapsed time to build and save shuffle-idx mapping'
-                         ' (seconds): {:4f}'.format(time.time() - start_time))
+
+            if use_custom_idx['shuffle']:
+                shuffle_idx = np.load(idx_path['shuffle'], allow_pickle=True, mmap_mode='r')
+                print_rank_0(f' > use predefined shuffle-idx in {idx_path["shuffle"]} instead of building a new one')
+            else:
+                shuffle_idx = _build_shuffle_idx(num_samples_,
+                                                 sample_idx.shape[0] - 1, np_rng, shuffle_samples)
+                np.save(idx_path['shuffle'], shuffle_idx, allow_pickle=True)
+                print_rank_0(' > elapsed time to build and save shuffle-idx mapping'
+                             ' (seconds): {:4f}'.format(time.time() - start_time))
         except OSError:
             print(f'There was an error trying to create the data cache directory ({data_cache_dir})')
             print('or a file in it. This defaults to a directory "index-cache" within the directory')
