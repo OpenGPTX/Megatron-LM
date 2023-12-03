@@ -1175,10 +1175,6 @@ def _add_data_args(parser):
                        'dataset2-path ...')
     group.add_argument('--data-cache-path', default=None,
                        help='Path to a directory to hold cached index files.')
-    group.add_argument('--train-doc-idx-path', default=None,
-                       help='Path to a file containing an index to use instead of random shuffling for training data.')
-    group.add_argument('--valid-sample-idx-path', default=None,
-                       help='Path to a file containing an index to use instead of random shuffling for valid data.')
     group.add_argument('--index-path-file', default=None,
                        help='JSON file containing paths to indices to use.')
     group.add_argument('--vocab-size', type=int, default=None,

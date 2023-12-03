@@ -96,7 +96,6 @@ def build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
                                           splits_string,
                                           train_valid_test_num_samples[0],
                                           seq_length, seed, skip_warmup,
-                                          doc_idx_path=train_doc_idx_path,
                                           data_cache_path=data_cache_path)
 
         if valid_data_prefix is not None:
@@ -104,7 +103,6 @@ def build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
                                           splits_string,
                                           train_valid_test_num_samples[1],
                                           seq_length, seed, False,
-                                          sample_idx_path=valid_sample_idx_path,
                                           data_cache_path=data_cache_path)
 
         if test_data_prefix is not None:
@@ -169,8 +167,6 @@ def _build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
 def build_dataset(dataset_name, data_prefix, data_impl,
                   splits_string, num_samples,
                   seq_length, seed, skip_warmup,
-                  doc_idx_path=None,
-                  sample_idx_path=None,
                   *,
                   data_cache_path=None):
     dataset = None
@@ -178,7 +174,6 @@ def build_dataset(dataset_name, data_prefix, data_impl,
         dataset = _build_dataset(dataset_name, data_prefix[0], data_impl,
                                  splits_string, num_samples, seq_length,
                                  seed, skip_warmup,
-                                 doc_idx_path, sample_idx_path,
                                  data_cache_path=data_cache_path)
     else:
         # Blending dataset.
@@ -206,8 +201,6 @@ def build_dataset(dataset_name, data_prefix, data_impl,
 
 def _build_dataset(dataset_name, data_prefix, data_impl, splits_string,
                    num_samples, seq_length, seed, skip_warmup,
-                   doc_idx_path=None,
-                   sample_idx_path=None,
                    *,
                    data_cache_path=None):
     """
@@ -231,7 +224,6 @@ def _build_dataset(dataset_name, data_prefix, data_impl, splits_string,
 
     dataset = GPTDataset(dataset_name, data_prefix, documents, indexed_dataset,
                          splits_string, num_samples, seq_length, seed,
-                         doc_idx_path, sample_idx_path,
                          data_cache_path=data_cache_path)
 
     return dataset
@@ -257,8 +249,6 @@ class GPTDataset(torch.utils.data.Dataset):
 
     def __init__(self, name, data_prefix, documents, indexed_dataset,
                  splits_string, num_samples, seq_length, seed,
-                 doc_idx_path=None,
-                 sample_idx_path=None,
                  return_doc_ids=False, *,
                  data_cache_path=None):
 
@@ -275,7 +265,6 @@ class GPTDataset(torch.utils.data.Dataset):
             _build_index_mappings(self.name, data_prefix,
                                   documents, self.indexed_dataset.sizes,
                                   splits_string, num_samples, seq_length, seed,
-                                  doc_idx_path, sample_idx_path,
                                   data_cache_path=data_cache_path)
 
 
@@ -324,7 +313,6 @@ class GPTDataset(torch.utils.data.Dataset):
 
 def _build_index_mappings(name, data_prefix, documents, sizes,
                           splits_string, num_samples, seq_length, seed,
-                          doc_idx_path, sample_idx_path=None,
                           *,
                           data_cache_path):
     """Build doc-idx, sample-idx, and shuffle-idx.
@@ -333,6 +321,8 @@ def _build_index_mappings(name, data_prefix, documents, sizes,
        training sample.
     shuffle-idx: maps the sample index into a random index into sample-idx.
     """
+    args = get_args()
+
     # Number of tokens in each epoch and number of required epochs.
     tokens_per_epoch = _num_tokens(documents, sizes)
     num_epochs = _num_epochs(tokens_per_epoch, seq_length, num_samples)
@@ -368,7 +358,7 @@ def _build_index_mappings(name, data_prefix, documents, sizes,
             'sample': os.path.join(prefix, sample_idx_filename),
             'shuffle': os.path.join(prefix, shuffle_idx_filename)
         }
-        if not (doc_idx_path or sample_idx_path):
+        if not args.index_paths:
             for f in idx_path.values():
                 if not os.path.isfile(f):
                     break
@@ -378,7 +368,6 @@ def _build_index_mappings(name, data_prefix, documents, sizes,
                 break
 
     # check for custom indices
-    args = get_args()
     use_custom_idx = {
         'doc': False,
         'sample': False,
@@ -448,7 +437,6 @@ def _build_index_mappings(name, data_prefix, documents, sizes,
 
             # doc-idx.
             if use_custom_idx['doc']:
-                doc_idx_filename = doc_idx_path
                 doc_idx = np.load(idx_path['doc'], allow_pickle=True, mmap_mode='r')
                 print_rank_0(f' > use predefined doc-idx in {idx_path["doc"]} instead of building a new one')
                 shuffle_samples = False
@@ -468,7 +456,6 @@ def _build_index_mappings(name, data_prefix, documents, sizes,
             assert doc_idx.dtype == np.int32
             assert sizes.dtype == np.int32
             if use_custom_idx['sample']:
-                sample_idx_filename = sample_idx_path
                 sample_idx = np.load(idx_path['sample'], allow_pickle=True, mmap_mode='r')
                 print_rank_0(f' > use predefined sample-idx in {idx_path["sample"]} instead of building a new one')
                 shuffle_samples = False
@@ -515,11 +502,7 @@ def _build_index_mappings(name, data_prefix, documents, sizes,
 
     # Load mappings.
     start_time = time.time()
-    if doc_idx_path:
-        idx_path['doc'] = doc_idx_path
 
-    if sample_idx_path:
-        idx_path['sample'] = sample_idx_path
     print_rank_0(f" > loading doc-idx mapping from {idx_path['doc']}")
     doc_idx = np.load(idx_path['doc'], allow_pickle=True, mmap_mode='r')
 

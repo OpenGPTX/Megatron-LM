@@ -114,8 +114,6 @@ def train_valid_test_datasets_provider(train_val_test_num_samples):
         valid_data_prefix=args.valid_data_path,
         test_data_prefix=args.test_data_path,
         data_cache_path=args.data_cache_path,
-        train_doc_idx_path=args.train_doc_idx_path,
-        valid_sample_idx_path=args.valid_sample_idx_path
     )
     print_rank_0("> finished creating GPT datasets ...")
 
