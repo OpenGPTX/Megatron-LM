@@ -411,6 +411,8 @@ def validate_args(args, defaults={}):
             raise ValueError(f"Index path file {args.index_path_file} does not exist")
         with args.index_path_file.open('r') as f:
             args.index_paths = json.load(f)
+    else:
+        args.index_paths = None
 
     # Print arguments.
     _print_args("arguments", args)
