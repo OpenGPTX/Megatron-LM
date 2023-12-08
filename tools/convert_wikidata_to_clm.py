@@ -4,7 +4,8 @@ import json
 from pathlib import Path
 
 
-chunk_size = 1_000_000_000
+chunk_size = 10_000_000
+# chunk_size = 10
 translated_wikidata_path = Path("/home/richard-rutmann/s3/data/wikidata/translated_wikidata-20220103-all_lut_v1.jsonl")
 output_dir = Path("/home/richard-rutmann/s3/data/wikidata/")
 
@@ -24,36 +25,30 @@ def print_with_time(msg: str):
     print(ts + " " + msg)
 
 
-# read wikidata LUT
-print_with_time("Read translated Wikidata")
-translated_wikidata = {}
-with translated_wikidata_path.open('r') as f:
-    for line in f.readlines():
-        d = json.loads(line)
-        translated_wikidata[d['wd_id']] = d
-
-num_documents = len(translated_wikidata)
-
 # translate IDs in Wikidata LUT
 print_with_time("Convert triples to CLM")
 clm_triples = []
 num_clm_triples_chunk = 0
 num_clm_triples = 0
-for i, (wd_id, wd_entry) in enumerate(translated_wikidata.items()):
-    for (subj, rel, obj) in wd_entry['subgraph']:
-        clm_triples.extend([
-            {"text": f"If the subject is {subj} and the relation is {rel}, what is the object? {obj}"},
-            {"text": f"If the object is {obj} and the relation is {rel}, what is the subject? {subj}"},
-            {"text": f"If the subject is {subj} and the object is {obj}, what is the relation? {rel}"}
-        ])
-        num_clm_triples_chunk += 3
 
-    if num_clm_triples_chunk >= chunk_size:
-        print_with_time(f"Processed {i}/{num_documents} entries in Wikidata")
-        save_wikidata(clm_triples)
-        clm_triples = []
-        num_clm_triples += num_clm_triples_chunk
-        num_clm_triples_chunk = 0
+with translated_wikidata_path.open('r') as f:
+    for i, line in enumerate(f.readlines()):
+        subgraph = json.loads(line)['subgraph']
+
+        for (subj, rel, obj) in subgraph:
+            clm_triples.extend([
+                {"text": f"If the subject is {subj} and the relation is {rel}, the object is {obj}"},
+                {"text": f"If the object is {obj} and the relation is {rel}, the subject is {subj}"},
+                {"text": f"If the subject is {subj} and the object is {obj}, the relation is {rel}"}
+            ])
+            num_clm_triples_chunk += 3
+
+        if num_clm_triples_chunk >= chunk_size:
+            print_with_time(f"Processed {i} entries in Wikidata")
+            save_wikidata(clm_triples)
+            clm_triples = []
+            num_clm_triples += num_clm_triples_chunk
+            num_clm_triples_chunk = 0
 
 # save
 num_clm_triples += num_clm_triples_chunk
