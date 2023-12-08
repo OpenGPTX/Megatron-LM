@@ -192,7 +192,6 @@ def forward_step(
         if not collect_non_loss_data:
             output_tensor = loss_func(output_tensor)
             loss, loss_reduced = output_tensor
-            loss_reduced['non reduced lm loss'] = loss
             output_tensor = loss / num_microbatches
             forward_data_store.append(loss_reduced)
         else:

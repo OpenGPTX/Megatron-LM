@@ -55,7 +55,7 @@ def get_batch(data_iterator):
     tokens_ = data_b['text'].long()
     labels = tokens_[:, 1:].contiguous()
     tokens = tokens_[:, :-1].contiguous()
-    idx = int(data_b['idx'])
+    idx = [int(i) for i in data_b['idx']]
 
     # Get the masks and postition ids.
     attention_mask, loss_mask, position_ids = get_ltor_masks_and_position_ids(
@@ -70,18 +70,17 @@ def get_batch(data_iterator):
 
 def loss_func(loss_mask, output_tensor):
     losses = output_tensor.float()
-    loss_mask = loss_mask.view(-1).float()
-    loss = torch.sum(losses.view(-1) * loss_mask) / loss_mask.sum()
+    loss_per_sample = torch.sum(losses * loss_mask, dim=1) / loss_mask.sum(dim=1)
+    loss = torch.sum(loss_per_sample) / loss_per_sample.shape[0]
 
     # Reduce loss for logging.
     averaged_loss = average_losses_across_data_parallel_group([loss])
 
-    return loss, {'lm loss': averaged_loss[0]}
+    return loss, {'lm loss': averaged_loss[0], 'lm loss per sample': loss_per_sample}
 
 
 def forward_step(data_iterator, model):
     """Forward step."""
-    args = get_args()
     timers = get_timers()
 
     # Get the batch.

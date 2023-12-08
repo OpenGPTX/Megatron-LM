@@ -525,12 +525,9 @@ def training_log(loss_dict, total_loss_dict, learning_rate, iteration,
     for key in loss_dict:
         if not skipped_iter:
             if args.loss_file:
-                if key == 'lm loss':
-                    losses.append((idx, str(float(loss_dict[key]))))
-                    # if len(losses) > 1000:
-                    if len(losses) > 10:
-                        write_to_loss_file(losses)
-                        losses = []
+                if key == 'lm loss per sample':
+                    losses = append_losses(idx, losses, loss_dict[key])
+
             total_loss_dict[key] = total_loss_dict.get(
                 key, torch.cuda.FloatTensor([0.0])) + loss_dict[key]
         else:
@@ -599,6 +596,8 @@ def training_log(loss_dict, total_loss_dict, learning_rate, iteration,
             writer.add_scalar('batch-size/batch-size vs samples', batch_size,
                               args.consumed_train_samples)
         for key in loss_dict:
+            if key == 'lm loss per sample':
+                continue
             writer.add_scalar(f"lm-loss-training/{key}", loss_dict[key], iteration)
             writer.add_scalar(f"lm-loss-training/{key}" + ' vs samples', loss_dict[key],
                               args.consumed_train_samples)
@@ -752,7 +751,7 @@ def training_log(loss_dict, total_loss_dict, learning_rate, iteration,
             report_memory_flag = False
         timers.log(timers_to_log, normalizer=args.log_interval)
 
-    return report_memory_flag
+    return report_memory_flag, losses
 
 
 def save_checkpoint_and_time(iteration, model, optimizer, opt_param_scheduler):
@@ -819,7 +818,7 @@ def train(forward_step_func, model, optimizer, opt_param_scheduler,
         params_norm = None
         if args.log_params_norm:
             params_norm = calc_params_l2_norm(model)
-        report_memory_flag = training_log(loss_dict, total_loss_dict,
+        report_memory_flag, losses = training_log(loss_dict, total_loss_dict,
                                           optimizer.param_groups[0]['lr'],
                                           iteration, loss_scale,
                                           report_memory_flag, skipped_iter,
@@ -954,13 +953,10 @@ def evaluate(forward_step_func,
                 for loss_dict in loss_dicts:
                     for key in loss_dict:
                         if args.loss_file:
-                            if key == 'non reduced lm loss':
-                                losses.append((idx, str(float(loss_dict[key]))))
-                                if len(losses) >= 10000:
-                                    write_to_loss_file(losses)
-                                    losses = []
+                            if key == 'lm loss per sample':
+                                losses = append_losses(idx, losses, loss_dict[key])
 
-                        if key != 'non reduced lm loss':
+                        if key != 'lm loss per sample':
                             total_loss_dict[key] = total_loss_dict.get(
                                 key, torch.cuda.FloatTensor([0.0])) + loss_dict[key]
 
@@ -991,6 +987,18 @@ def evaluate(forward_step_func,
 
     return total_loss_dict, collected_non_loss_data
 
+
+def append_losses(idx, losses, losses_per_sample):
+    for i in range(len(idx)):
+        losses.append((idx[i], str(float(losses_per_sample[i]))))
+
+    if len(losses) >= 10000:
+        write_to_loss_file(losses)
+        losses = []
+
+    return losses
+
+
 def evaluate_and_print_results(prefix, forward_step_func,
                                data_iterator, model,
                                iteration, process_non_loss_data_func, config,
@@ -1007,6 +1015,8 @@ def evaluate_and_print_results(prefix, forward_step_func,
         process_non_loss_data_func, config, verbose)
     string = ' validation loss at {} | '.format(prefix)
     for key in total_loss_dict:
+        if key == "lm loss per sample":
+            continue
         string += '{} value: {:.6E} | '.format(key, total_loss_dict[key].item())
         ppl = math.exp(min(20, total_loss_dict[key].item()))
         string += '{} PPL: {:.6E} | '.format(key, ppl)
