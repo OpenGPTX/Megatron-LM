@@ -5,7 +5,8 @@ from tqdm import tqdm
 
 
 # set these
-output_dir = Path("/home/richard-rutmann/opengptx/user/richard-rutmann/data/kg_distribution/doc_indices")
+output_dir = Path("/home/richard-rutmann/opengptx/user/richard-rutmann/data/kg_distribution/doc_indices_v2")
+output_dir.mkdir(exist_ok=True)
 dtype_ = np.int32
 num_docs_data_1 = 29095398
 num_docs_data_2 = 6455029
@@ -41,7 +42,7 @@ np.save(str(output_dir / f'doc_idx_v3'), doc_idx_v3)
 
 
 # VERSION 4: split datasets into chunks and put them in alternating order
-num_chunks = 10_000
+num_chunks = 100_000
 cs_data_1 = len(doc_idx_data_1) // num_chunks
 cs_data_2 = len(doc_idx_data_2) // num_chunks
 doc_idx_v4 = np.array([], dtype=dtype_)
