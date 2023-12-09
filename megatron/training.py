@@ -722,7 +722,7 @@ def training_log(loss_dict, total_loss_dict, learning_rate, iteration,
         log_string += ' global batch size: {:5d} |'.format(batch_size)
         for key in total_loss_dict:
             if key not in [advanced_iters_key, skipped_iters_key,
-                           nan_iters_key]:
+                           nan_iters_key, 'lm loss per sample']:
                 avg = total_loss_dict[key].item() / \
                       float(max(1, total_loss_dict[advanced_iters_key]))
                 if avg > 0.0:
