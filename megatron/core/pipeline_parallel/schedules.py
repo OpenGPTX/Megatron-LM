@@ -12,6 +12,7 @@ from megatron.core import parallel_state
 from megatron.core.enums import ModelType
 from megatron.core.pipeline_parallel import p2p_communication
 from megatron.core.utils import get_attr_wrapped_model, get_model_config, get_model_type
+from megatron.data.odm_dataset import ODMDataset
 
 # Types
 Shape = Union[List[int], torch.Size]
@@ -198,6 +199,12 @@ def forward_step(
             data = loss_func(output_tensor, non_loss_data=True)
             forward_data_store.append(data)
 
+        if (
+                isinstance(data_iterator.dataset, ODMDataset)
+                and not collect_non_loss_data
+        ):
+            data_iterator.dataset.store_loss(loss)
+
     if config.timers is not None:
         config.timers('forward-compute').stop()
 
@@ -355,6 +362,8 @@ def forward_backward_no_pipelining(
     if not forward_only:
         backward_step(input_tensor, output_tensor, output_tensor_grad, model_type, config)
 
+    if isinstance(data_iterator.dataset, ODMDataset):
+        data_iterator.dataset.update_rewards()
     return forward_data_store
 
 
@@ -912,6 +921,8 @@ def forward_backward_pipelining_with_interleaving(
         if params:
             config.grad_sync_func(params)
 
+    if isinstance(data_iterator.dataset, ODMDataset):
+        data_iterator.dataset.update_rewards()
     return forward_data_store
 
 

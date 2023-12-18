@@ -900,6 +900,10 @@ def _add_training_args(parser):
     group.add_argument('--dataloader-type', type=str, default=None,
                        choices=['single', 'cyclic'],
                        help='Single pass vs multiple pass data loader')
+    group.add_argument('--odm-alpha', type=float,
+                       help='The alpha value for the reward moving average '
+                       'of Online Data Mixing. If not given, do not use '
+                       'Online Data Mixing.')
     group.add_argument('--no-async-tensor-model-parallel-allreduce',
                        action='store_false',
                        help='Disable asynchronous execution of '

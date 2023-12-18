@@ -36,6 +36,7 @@ from megatron import (
 from megatron.core import mpu
 from megatron.data.blendable_dataset import BlendableDataset
 from megatron.data.indexed_dataset import make_dataset as make_indexed_dataset
+from megatron.data.odm_dataset import ODMDataset
 
 DSET_TYPE_BERT = 'standard_bert'
 DSET_TYPE_ICT = 'ict'
@@ -607,7 +608,14 @@ def build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
     # Blend.
     blending_train_dataset = None
     if train_datasets:
-        blending_train_dataset = BlendableDataset(train_datasets, weights, train_num_samples)
+        args = get_args()
+        if args.odm_alpha is not None:
+            blending_train_dataset = ODMDataset(
+                train_datasets, weights, train_num_samples,
+                args.odm_alpha, seed,
+            )
+        else:
+            blending_train_dataset = BlendableDataset(train_datasets, weights, train_num_samples)
     blending_valid_dataset = None
     if valid_datasets:
         blending_valid_dataset = BlendableDataset(valid_datasets, weights, valid_num_samples)

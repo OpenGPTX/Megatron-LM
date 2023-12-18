@@ -10,12 +10,14 @@ import time
 import numpy as np
 import torch
 
+from megatron import get_args
 from megatron import print_rank_0
 from megatron.data.blendable_dataset import BlendableDataset
 from megatron.data.dataset_utils import dp_pp_barrier
 from megatron.data.dataset_utils import get_datasets_weights_and_num_samples
 from megatron.data.dataset_utils import get_train_valid_test_split_
 from megatron.data.indexed_dataset import make_dataset as make_indexed_dataset
+from megatron.data.odm_dataset import ODMDataset
 
 
 def build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
@@ -70,8 +72,16 @@ def build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
         # Blend.
         blending_train_dataset = None
         if train_datasets:
-            blending_train_dataset = BlendableDataset(train_datasets, weights, train_num_samples,
-                                                      data_cache_path=data_cache_path)
+            args = get_args()
+            if args.odm_alpha is not None:
+                blending_train_dataset = ODMDataset(
+                    train_datasets, weights, train_num_samples,
+                    args.odm_alpha, seed, data_cache_path=data_cache_path,
+                )
+            else:
+                blending_train_dataset = BlendableDataset(train_datasets, weights, train_num_samples,
+                                                              data_cache_path=data_cache_path)
+
         blending_valid_dataset = None
         if valid_datasets:
             blending_valid_dataset = BlendableDataset(valid_datasets, weights, valid_num_samples,
@@ -190,8 +200,15 @@ def build_dataset(dataset_name, data_prefix, data_impl,
                 datasets.append(ds)
 
         if datasets:
-            dataset = BlendableDataset(datasets, weights, num_samples,
-                                       data_cache_path=data_cache_path)
+            args = get_args()
+            if dataset_name == 'train' and args.odm_alpha is not None:
+                dataset = ODMDataset(
+                    datasets, weights, num_samples, args.odm_alpha,
+                    data_cache_path=data_cache_path,
+                )
+            else:
+                dataset = BlendableDataset(datasets, weights, num_samples,
+                                           data_cache_path=data_cache_path)
 
     return dataset
 
