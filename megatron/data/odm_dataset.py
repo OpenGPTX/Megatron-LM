@@ -181,7 +181,7 @@ class ODMDataset(torch.utils.data.Dataset):
         # could assume they already do because of later Python versions
         # and dictonary keeping ordering, but let's just assume ordered
         # incides are nicer.
-        losses = np.concat([
+        losses = np.array([
             self._dataset_losses[dataset_idx]
             for dataset_idx in dataset_idxs
         ])
