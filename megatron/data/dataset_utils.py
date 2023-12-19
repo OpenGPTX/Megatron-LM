@@ -612,7 +612,8 @@ def build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
         if args.odm_alpha is not None:
             blending_train_dataset = ODMDataset(
                 train_datasets, weights, train_num_samples,
-                args.odm_alpha, seed,
+                args.odm_alpha, args.odm_warmup_steps, args.global_batch_size,
+                seed,
             )
         else:
             blending_train_dataset = BlendableDataset(train_datasets, weights, train_num_samples)

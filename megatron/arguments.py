@@ -910,6 +910,11 @@ def _add_training_args(parser):
                        help='The alpha value for the reward moving average '
                        'of Online Data Mixing. If not given, do not use '
                        'Online Data Mixing.')
+    group.add_argument('--odm-warmup-steps', type=float,
+                       help='For how many initial steps not to update the '
+                       'Online Data Mixing policy. Can be given as integer '
+                       'number of steps or ratio in [0, 1). Only used if '
+                       '`--odm-alpha` is given. By default 0.01.')
     group.add_argument('--no-async-tensor-model-parallel-allreduce',
                        action='store_false',
                        help='Disable asynchronous execution of '

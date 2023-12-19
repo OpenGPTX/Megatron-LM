@@ -19,7 +19,7 @@ class ODMDataset(torch.utils.data.Dataset):
 
     def __init__(
             self, datasets, initial_weights, size, alpha,
-            seed, *, data_cache_path=None,
+            warmup_steps, global_batch_size, seed, *, data_cache_path=None,
     ):
 
         self.datasets = datasets
@@ -32,6 +32,15 @@ class ODMDataset(torch.utils.data.Dataset):
         self.data_parallel_size = parallel_state.get_data_parallel_world_size()
         data_parallel_rank = parallel_state.get_data_parallel_rank()
         self.seed = seed
+
+        # By default 1 % of total steps (`self.size //
+        # global_batch_size`) in paper.
+        if warmup_steps is None:
+            warmup_steps = 0.01
+        if 0 < warmup_steps < 1:
+            warmup_steps = round(self.size / global_batch_size * warmup_steps)
+        assert warmup_steps >= 0
+        self.warmup_steps = warmup_steps
 
         self.sizes = [len(dataset) for dataset in datasets]
         shard_sizes = [
@@ -64,6 +73,8 @@ class ODMDataset(torch.utils.data.Dataset):
         desc += f"Weights: {initial_weights}\n"
         desc += f"Size: {size}\n"
         desc += f"Alpha: {alpha}\n"
+        desc += f"Warmup steps: {warmup_steps}\n"
+        desc += f"Global batch size: {global_batch_size}\n"
         desc += f"Data parallel rank: {data_parallel_rank}\n"
         desc += f"Data parallel size: {self.data_parallel_size}\n"
         desc += f"Seed: {seed}\n"
@@ -180,7 +191,8 @@ class ODMDataset(torch.utils.data.Dataset):
         self._step += 1
         # TODO Reduce rewards over data parallel ranks?
         # TODO Maybe make flag for this. Also check other places.
-        self.update_policy(old_rewards, dataset_idxs)
+        if self._step > self.warmup_steps:
+            self.update_policy(old_rewards, dataset_idxs)
 
     def __getitem__(self, idx):
         # FIXME `MegatronPretrainingRandomSampler` needs special
