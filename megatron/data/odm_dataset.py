@@ -35,8 +35,6 @@ class ODMDataset(torch.utils.data.Dataset):
 
         # By default 1 % of total steps (`self.size //
         # global_batch_size`) in paper.
-        if warmup_steps is None:
-            warmup_steps = 0.01
         if 0 < warmup_steps < 1:
             warmup_steps = round(self.size / global_batch_size * warmup_steps)
         assert warmup_steps >= 0
