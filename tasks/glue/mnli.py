@@ -45,9 +45,9 @@ class MNLIDataset(GLUEAbstractDataset):
                                          row[9].strip(), row[-1].strip()))
                     continue
 
-                text_a = clean_text(row[8].strip())
-                text_b = clean_text(row[9].strip())
-                unique_id = int(row[0].strip())
+                text_a = clean_text(row[5].strip())
+                text_b = clean_text(row[6].strip())
+                unique_id = int(row[7].strip())
                 label = row[-1].strip()
                 if is_test:
                     label = self.test_label
