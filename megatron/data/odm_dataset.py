@@ -101,7 +101,7 @@ class ODMDataset(torch.utils.data.Dataset):
             raise RuntimeError('OMDDataset size is improperly bounded')
         except IndexError:
             pass
-        self.update_policy(np.empty((0,)), np.empty((0,), dtype=np.int64))
+        self.update_policy(None, None)
         print_rank_0('> size of OMD dataset: '
                      '{} samples'.format(self.size))
 
@@ -140,12 +140,21 @@ class ODMDataset(torch.utils.data.Dataset):
         if self._need_full_denominator_update:
             self.policy_denominator_sum = np.sum(
                 np.exp(prev_eps * self.rewards))
-        elif len(old_rewards) > 0 and len(dataset_idxs) > 0:
-            assert len(old_rewards) == len(dataset_idxs)
+        elif old_rewards is not None and dataset_idxs is not None:
+            assert (
+                len(old_rewards) == len(dataset_idxs)
+                and len(old_rewards) > 0
+                and len(dataset_idxs) > 0
+            )
             self.policy_denominator_sum = (
                 self.policy_denominator_sum
                 - np.sum(np.exp(prev_eps * old_rewards))
                 + np.sum(np.exp(prev_eps * self.rewards[dataset_idxs]))
+            )
+        elif old_rewards is None or dataset_idxs is None:
+            assert old_rewards is None and dataset_idxs is None, (
+                'not allowed for only one of `old_rewards` and `dataset_idxs` '
+                'to be `None`.'
             )
         self.policy[:] = (
             (1 - self.num_datasets * self.eps)
