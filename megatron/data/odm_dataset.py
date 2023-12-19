@@ -42,8 +42,8 @@ class ODMDataset(torch.utils.data.Dataset):
 
         self.sizes = [len(dataset) for dataset in datasets]
         shard_sizes = [
-            len(dataset) // self.data_parallel_size
-            for dataset in datasets
+            group_size // self.data_parallel_size
+            for group_size in self.sizes
         ]
         self.index_starts = [
             shard_size * data_parallel_rank
