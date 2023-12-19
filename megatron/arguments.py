@@ -193,6 +193,12 @@ def validate_args(args, defaults={}):
     if args.dataloader_type is None:
         args.dataloader_type = 'single'
 
+    assert args.odm_alpha is not None or args.num_workers == 0, (
+        'Number of workers must be 0 when using ODM. '
+        'Otherwise DataLoader pre-fetching cannot be prevented.'
+    )
+
+
     # Consumed tokens.
     args.consumed_train_samples = 0
     args.consumed_valid_samples = 0
