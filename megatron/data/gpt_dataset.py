@@ -152,7 +152,6 @@ def _build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
                                  splits_string,
                                  train_valid_test_num_samples[index],
                                  seq_length, seed,
-                                 doc_idx_path, sample_idx_path,
                                  return_doc_ids,
                                  data_cache_path=data_cache_path)
         return dataset
@@ -436,6 +435,7 @@ def _build_index_mappings(name, data_prefix, documents, sizes,
                 fd.write(desc)
 
             # doc-idx.
+            shuffle_samples = False if name == 'train' and args.no_sample_shuffling else True
             if use_custom_idx['doc']:
                 doc_idx = np.load(idx_path['doc'], allow_pickle=True, mmap_mode='r')
                 print_rank_0(f' > use predefined doc-idx in {idx_path["doc"]} instead of building a new one')
@@ -447,7 +447,7 @@ def _build_index_mappings(name, data_prefix, documents, sizes,
                 np.save(idx_path['doc'], doc_idx, allow_pickle=True)
                 print_rank_0(' > elapsed time to build and save doc-idx mapping '
                              '(seconds): {:4f}'.format(time.time() - start_time))
-                shuffle_samples = True
+
             # sample-idx.
             start_time = time.time()
             # Use C++ implementation for speed.
@@ -475,7 +475,6 @@ def _build_index_mappings(name, data_prefix, documents, sizes,
                 num_samples_ = sample_idx.shape[0] - 1
 
             if use_custom_idx['shuffle']:
-                shuffle_idx = np.load(idx_path['shuffle'], allow_pickle=True, mmap_mode='r')
                 print_rank_0(f' > use predefined shuffle-idx in {idx_path["shuffle"]} instead of building a new one')
             else:
                 shuffle_idx = _build_shuffle_idx(num_samples_,

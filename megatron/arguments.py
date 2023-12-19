@@ -1179,6 +1179,8 @@ def _add_data_args(parser):
                        help='Path to a directory to hold cached index files.')
     group.add_argument('--index-path-file', default=None,
                        help='JSON file containing paths to indices to use.')
+    group.add_argument('--no-sample-shuffling', action='store_true',
+                       help='Do not shuffle training samples.')
     group.add_argument('--vocab-size', type=int, default=None,
                        help='Size of vocab before EOD or padding.')
     group.add_argument('--vocab-file', type=str, default=None,
