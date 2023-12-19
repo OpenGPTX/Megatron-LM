@@ -27,7 +27,7 @@ class ODMDataset(torch.utils.data.Dataset):
         assert self.num_datasets == len(initial_weights)
 
         self.size = size
-        # Paper doesn't state selected value.
+        # Paper doesn't state selected value, but it's 0.5.
         self.alpha = alpha
         self.data_parallel_size = parallel_state.get_data_parallel_world_size()
         data_parallel_rank = parallel_state.get_data_parallel_rank()
