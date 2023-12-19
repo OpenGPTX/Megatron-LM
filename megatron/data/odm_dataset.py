@@ -37,7 +37,11 @@ class ODMDataset(torch.utils.data.Dataset):
         # global_batch_size`) in paper.
         if 0 < warmup_steps < 1:
             warmup_steps = round(self.size / global_batch_size * warmup_steps)
-        assert warmup_steps >= 0
+        assert warmup_steps > 0, (
+            "cannot have warmup of 0; first step's policy weights are given "
+            "by `initial_weights`, so warmup of 0 can be simulated by setting "
+            "`initial_weights` to `[1] * len(datasets)`."
+        )
         self.warmup_steps = warmup_steps
 
         self.sizes = [len(dataset) for dataset in datasets]
@@ -89,7 +93,7 @@ class ODMDataset(torch.utils.data.Dataset):
 
         self.eps = 1 / self.num_datasets
         self.rewards = np.zeros((self.num_datasets,))
-        self.policy = np.empty((self.num_datasets,))
+        self.policy = initial_weights
         # This would just be sum_{i = 1}^num_datasets exp(eps * 0)
         self.policy_denominator_sum = np.array(
             self.num_datasets, dtype=self.rewards.dtype)
@@ -101,7 +105,6 @@ class ODMDataset(torch.utils.data.Dataset):
             raise RuntimeError('OMDDataset size is improperly bounded')
         except IndexError:
             pass
-        self.update_policy(None, None)
         print_rank_0('> size of OMD dataset: '
                      '{} samples'.format(self.size))
 
@@ -140,7 +143,7 @@ class ODMDataset(torch.utils.data.Dataset):
         if self._need_full_denominator_update:
             self.policy_denominator_sum = np.sum(
                 np.exp(prev_eps * self.rewards))
-        elif old_rewards is not None and dataset_idxs is not None:
+        else:
             assert (
                 len(old_rewards) == len(dataset_idxs)
                 and len(old_rewards) > 0
@@ -150,11 +153,6 @@ class ODMDataset(torch.utils.data.Dataset):
                 self.policy_denominator_sum
                 - np.sum(np.exp(prev_eps * old_rewards))
                 + np.sum(np.exp(prev_eps * self.rewards[dataset_idxs]))
-            )
-        elif old_rewards is None or dataset_idxs is None:
-            assert old_rewards is None and dataset_idxs is None, (
-                'not allowed for only one of `old_rewards` and `dataset_idxs` '
-                'to be `None`.'
             )
         self.policy[:] = (
             (1 - self.num_datasets * self.eps)

@@ -913,7 +913,7 @@ def _add_training_args(parser):
     group.add_argument('--odm-warmup-steps', type=float, default=0.01,
                        help='For how many initial steps not to update the '
                        'Online Data Mixing policy. Can be given as integer '
-                       'number of steps or ratio in [0, 1). Only used if '
+                       'number of steps or ratio in (0, 1). Only used if '
                        '`--odm-alpha` is given. By default 0.01.')
     group.add_argument('--no-async-tensor-model-parallel-allreduce',
                        action='store_false',
