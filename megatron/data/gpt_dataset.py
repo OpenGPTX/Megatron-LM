@@ -203,7 +203,7 @@ def build_dataset(dataset_name, data_prefix, data_impl,
             args = get_args()
             if dataset_name == 'train' and args.odm_alpha is not None:
                 dataset = ODMDataset(
-                    datasets, weights, num_samples, args.odm_alpha,
+                    datasets, weights, num_samples, args.odm_alpha, seed,
                     data_cache_path=data_cache_path,
                 )
             else:
