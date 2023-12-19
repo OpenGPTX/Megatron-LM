@@ -19,7 +19,8 @@ class ODMDataset(torch.utils.data.Dataset):
 
     def __init__(
             self, datasets, initial_weights, size, alpha,
-            warmup_steps, global_batch_size, seed, *, data_cache_path=None,
+            warmup_steps, use_importance_weighting, global_batch_size, seed, *,
+            data_cache_path=None,
     ):
 
         self.datasets = datasets
@@ -29,6 +30,8 @@ class ODMDataset(torch.utils.data.Dataset):
         self.size = size
         # Paper doesn't state selected value, but it's 0.5.
         self.alpha = alpha
+        # Paper says this is used, but it isn't.
+        self.use_importance_weighting = use_importance_weighting
         self.data_parallel_size = parallel_state.get_data_parallel_world_size()
         data_parallel_rank = parallel_state.get_data_parallel_rank()
         self.seed = seed
@@ -189,7 +192,11 @@ class ODMDataset(torch.utils.data.Dataset):
             self.alpha * self.rewards[dataset_idxs]
             + (
                 (1 - self.alpha)
-                * losses / self.policy[dataset_idxs]
+                * losses / (
+                    self.policy[dataset_idxs]
+                    if self.use_importance_weighting
+                    else 1
+                )
             )
         )
 
