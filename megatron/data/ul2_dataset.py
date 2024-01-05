@@ -388,7 +388,7 @@ def build_training_sample(sample, target_seq_length,
                 and (denoiser == 'S' or denoiser == 'C')
                 or not add_mask_tokens
         ):
-            max_num_tokens -= 3
+            max_num_tokens -= 2
 
         # If we have a decoder-only model and do not add mask tokens, we
         # basically duplicate the sequence. So cut the maximum length in
