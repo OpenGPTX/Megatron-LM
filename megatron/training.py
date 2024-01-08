@@ -40,7 +40,6 @@ from megatron.data.data_samplers import build_pretraining_data_loader
 from megatron.utils import calc_params_l2_norm
 from megatron.core.pipeline_parallel import get_forward_backward_func
 from megatron.utils import report_memory
-from megatron.model.vision.knn_monitor import compute_feature_bank
 
 
 def print_datetime(string):
@@ -455,6 +454,7 @@ def train_step(forward_step_func, data_iterator,
 
     # Vision gradients.
     if args.vision_pretraining and args.vision_pretraining_type == "dino":
+        from megatron.model.vision.knn_monitor import compute_feature_bank
         unwrapped_model = unwrap_model(model[0],
                                        (torchDDP, LocalDDP, Float16Module))
         unwrapped_model.cancel_gradients_last_layer(args.curr_iteration)

@@ -21,8 +21,8 @@ export MASTER_PORT=60234
 # pip install flask-restful
 
 python tools/run_text_generation_server.py   \
-       --load /p/project/opengptx-elm/thellmann1/workdir/checkpoint_conversion_meglm_test/meglm/2023-07-27_18-00-00/output_dir/340M_meglm_8105626.sbatch/checkpoints \
-       --tokenizer-model /p/project/opengptx-elm/thellmann1/workdir/checkpoint_conversion_meglm_test/meglm/2023-07-27_18-00-00/output_dir/340M_meglm_8105626.sbatch/converted_checkpoints/iter_0015000/tokenizer.model \
+       --load /p/scratch/opengptx-elm/ali5/opengpt/megatron-lm/output_dir/8181788/checkpoints \
+       --tokenizer-model /p/scratch/opengptx-elm/data/datasources_opgptx/data_quality_experiments_datasets/ablations_studies/monolingual_en/70B_10/tokenizer_training/bpe/sp/32768_10/bpe_tokenizer.model \
        --tokenizer-type OpenGPTX-SPTokenizer \
        --pipeline-model-parallel-size 1  \
        --tensor-model-parallel-size 1  \
@@ -39,7 +39,6 @@ python tools/run_text_generation_server.py   \
        --seed 42 \
        --no-position-embedding \
        --position-embedding-type rotary \
-       --use-flash-attn \
        --reset-attention-mask \
        --reset-position-ids
 
