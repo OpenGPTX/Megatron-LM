@@ -1,0 +1,5 @@
+EOD_TOKEN = "<eod>"
+PAD_TOKEN = "<pad>"
+BOS_TOKEN = "<s>"
+EOS_TOKEN = "</s>"
+UNK_TOKEN = "<unk>"

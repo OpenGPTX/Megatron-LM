@@ -16,6 +16,8 @@ except ImportError:
     PretrainedHFTokenizer = None
     SPTokenizer = None
 
+    from .gptxdata import SPTokenizer
+
 from .bert_tokenization import FullTokenizer as FullBertTokenizer
 from .gpt2_tokenization import GPT2Tokenizer
 
