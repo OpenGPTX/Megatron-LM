@@ -6,7 +6,7 @@ from abc import ABC
 from abc import abstractmethod
 
 try:
-    from gptxdata.tokenization import (
+    from gptx_tokenizer import (
         HFTokenizer,
         PretrainedHFTokenizer,
         SPTokenizer,
