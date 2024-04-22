@@ -22,8 +22,8 @@ from .gpt2_tokenization import GPT2Tokenizer
 
 def _assert_gptx_tokenizer_available(tokenizer_name, tokenizer_cls):
     assert tokenizer_cls is not None, (
-        f'Please install `gptxdata` to use {tokenizer_name}, e.g., with '
-        f'`pip install git+https://github.com/OpenGPTX/opengptx_data.git`'
+        f'Please install `gptx_tokenizer` to use {tokenizer_name}, e.g., with '
+        f'`pip install git+https://github.com/OpenGPTX/gptx_tokenizer.git`'
     )
 
 
