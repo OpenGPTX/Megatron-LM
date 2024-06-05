@@ -831,6 +831,8 @@ def _add_training_args(parser):
                        help='Gloable step to stop profiling.')
     group.add_argument('--profile-ranks', nargs='+', type=int, default=[0],
                        help='Global ranks to profile.')
+    group.add_argument('--skip-train-iteration-range', type=str, nargs='+', default=None,
+                       help='Iteration ranges to skip. The values are one or more dash-separated ranges. e.g., 101-200 251-300.')
 
 
     # deprecated

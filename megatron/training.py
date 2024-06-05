@@ -42,6 +42,9 @@ from megatron.core.pipeline_parallel import get_forward_backward_func
 from megatron.utils import report_memory
 from megatron.model.vision.knn_monitor import compute_feature_bank
 
+import bisect
+import ast
+from collections import deque
 
 def print_datetime(string):
     """Note that this call will sync across all ranks."""
@@ -785,12 +788,38 @@ def train(forward_step_func, model, optimizer, opt_param_scheduler,
     timers('interval-time', log_level=0).start(barrier=True)
     print_datetime('before the start of training step')
     report_memory_flag = True
+    
+    # flush intervals prior to current iteration
+    if args.skip_train_iteration_range is not None:
+        args.skip_train_iteration_range = deque([ast.literal_eval(item) for item in args.skip_train_iteration_range])
+        ends = [end for start, end in args.skip_train_iteration_range]
+        index = bisect.bisect_left(ends, iteration)
+        for _ in range(index):
+            args.skip_train_iteration_range.popleft()
+            
     while iteration < args.train_iters:
         if args.profile and \
            iteration == args.profile_step_start and \
            torch.distributed.get_rank() in args.profile_ranks:
             torch.cuda.cudart().cudaProfilerStart()
             torch.autograd.profiler.emit_nvtx(record_shapes=True).__enter__()
+            
+        if (
+            # train_data_iterator is not None
+            args.skip_train_iteration_range is not None
+            and len(args.skip_train_iteration_range) > 0
+            and args.skip_train_iteration_range[0][0] <= iteration + 1 <= args.skip_train_iteration_range[0][1]
+        ):
+            start, end = args.skip_train_iteration_range.popleft()
+            print_rank_0(f"Skipped iterations {start} to {end} due to --skip-train-iteration-range flag.")
+            iteration_for_skipping = args.iteration
+            while iteration_for_skipping + 1 <= end:
+                try:
+                    _ = next(train_data_iterator)
+                except TypeError:
+                    pass
+                iteration_for_skipping += 1
+            continue
 
         update_num_microbatches(args.consumed_train_samples)
         args.curr_iteration = iteration

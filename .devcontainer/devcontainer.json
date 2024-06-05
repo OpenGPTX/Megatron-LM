@@ -1,0 +1,29 @@
+{
+    "name": "Megatron Container",
+    "image": "nvcr.io/nvidia/pytorch:24.04-py3",
+    "runArgs": [
+        "--network",
+        "host",
+        "--gpus",
+        "all",
+        "-v",
+        "/raid/s3/opengptx/alexj/continual_pretraining/dataset:/workspace/dataset",
+        "-v",
+        "/raid/s3/opengptx/alexj/continual_pretraining/checkpoints:/workspace/checkpoints",
+        "-v",
+        "/raid/s3/opengptx/user/richard-rutmann/data/tokenizer/gpt2:/workspace/tokenizer"
+    ],
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.shell.linux": "/bin/bash"
+            },
+            "mounts": [
+                "source=/home/alex-jude/.bashrc,target=/root/.bashrc,type=bind"
+            ],
+            "extensions": [
+                "ms-python.python"
+            ]
+        }
+    }
+}
