@@ -3,13 +3,14 @@
 """GPT style dataset."""
 
 import hashlib
+import json
 import os
 import time
 
 import numpy as np
 import torch
 
-from megatron import print_rank_0
+from megatron import print_rank_0, get_args, get_tokenizer
 from megatron.core import mpu
 from megatron.data.blendable_dataset import BlendableDataset
 from megatron.data.dataset_utils import get_datasets_weights_and_num_samples
@@ -157,6 +158,19 @@ def _build_train_valid_test_datasets(data_prefix, data_impl, splits_string,
     valid_dataset = build_dataset(1, 'valid')
     test_dataset = build_dataset(2, 'test')
 
+    args = get_args()
+    if args.save_valid_texts_path is not None:
+        tokenizer = get_tokenizer()
+        print_rank_0(f"Save detokenized texts in valid dataset to {args.save_valid_texts_path}")
+        with open(args.save_valid_texts_path, "w") as f:
+            for i, val in enumerate(valid_dataset):
+                f.write(json.dumps({"text": tokenizer.detokenize(val["text"])}) + "\n")
+                j = i + 1
+                if j % 100_000 == 0:
+                    print_rank_0(f"Written {j} / {len(valid_dataset)} documents ...")
+        print_rank_0("Done. Exiting now")
+        exit(0)
+            
     return (train_dataset, valid_dataset, test_dataset)
 
 

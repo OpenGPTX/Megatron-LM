@@ -702,6 +702,11 @@ def _add_logging_args(parser):
     group.add_argument('--log-world-size-to-tensorboard',
                        action='store_true',
                        help='Enable world size logging to tensorboard.')
+    group.add_argument('--save-valid-texts-path',
+                    type=str,
+                    required=False,
+                    default=None,
+                    help='Save all texts in valid dataset to this path. The training will not be executed.')
 
     return parser
 
