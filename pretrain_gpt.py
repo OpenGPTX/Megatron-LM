@@ -98,15 +98,20 @@ def detect_language(text):
     return re.search(r'__label__(\w+)', prediction[0][0]).group(1)
 
 
-# Perform language identification
-def identify_language(lines):
-    languages = []
-    for line in lines:
-        prediction = model.predict(line, k=1)  # k=1 means we want the top prediction
-        lang_code = prediction[0][0].replace("__label__", "")
-        languages.append(lang_code)
-    return languages
+# # Perform language identification
+# def identify_language(lines):
+#     languages = []
+#     for line in lines:
+#         prediction = model.predict(line, k=1)  # k=1 means we want the top prediction
+#         lang_code = prediction[0][0].replace("__label__", "")
+#         languages.append(lang_code)
+#     return languages
 
+
+def identify_language(lines):
+    prediction = model.predict(lines, k=1)  # k=1 means we want the top prediction
+    lang_code = prediction[0][0].replace("__label__", "")
+    return lang_code
 
 def plot_histogram(languages, save_path=None):
     language_counts = Counter(languages)
@@ -241,10 +246,11 @@ def forward_step(data_iterator, model):
     tokenizer = get_tokenizer()
     tokens_list = tokens.tolist()
     tokens_list = [item for sublist in tokens_list for item in sublist]
-    detokenized_words = tokenizer.detokenize(token_ids=tokens_list).split('\n')
+    detokenized_words = tokenizer.detokenize(token_ids=tokens_list).replace('\n', ' ')
     identified_languages = identify_language(detokenized_words)
     
-    identified_languages_list.extend(identified_languages)
+    # identified_languages_list.extend(identified_languages)
+    identified_languages_list.append(identified_languages)
     
     
     output_tensor = model(tokens, position_ids, attention_mask,

@@ -81,9 +81,9 @@
                 "--micro-batch-size",
                 "1",
                 "--global-batch-size",
-                "2",
+                "200",
                 "--skip-train-iteration-range",
-                "(0, 201)"
+                "0-5"
             ],
             "console": "integratedTerminal",
             "justMyCode": true,

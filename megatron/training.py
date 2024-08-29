@@ -791,7 +791,6 @@ def train(forward_step_func, model, optimizer, opt_param_scheduler,
     
     # flush intervals prior to current iteration
     if args.skip_train_iteration_range is not None:
-        args.skip_train_iteration_range = deque([ast.literal_eval(item) for item in args.skip_train_iteration_range])
         ends = [end for start, end in args.skip_train_iteration_range]
         index = bisect.bisect_left(ends, iteration)
         for _ in range(index):
